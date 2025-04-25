@@ -11,7 +11,7 @@ Three Levels of Obfuscation/Evasion:
 
 🔺 Advanced: Aggressive and stealthy evasion strategies meant to bypass well-configured WAFs.
 
-##Three Obfuscation Categories:
+## Three Obfuscation Categories:
 
 ### Paths: 
 - Obfuscate URL paths with encodings, alternate separators, and tricky combinations.

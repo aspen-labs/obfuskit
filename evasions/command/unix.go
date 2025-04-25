@@ -17,16 +17,17 @@ func UnixCmdVariants(payload string, level cmd.Level) []string {
 	variants = append(variants,
 		backslashEvasion(payload),      // Using backslashes between characters
 		quoteVariations(payload),       // Different quote styles
-		bashExpansion(payload),         // ${var} style expansion
 		spacingTechniques(payload),     // Various spacing techniques
-		environmentVariables(payload),  // Environment variable substitution
 		commandChaining(payload),       // Using ; && and || for chaining
 		binaryPathObfuscation(payload), // /usr/bin/ path variations
 		inlineComments(payload),        // Using inline comments #
-		variableAssignment(payload),    // Simple variable assignment
 		redirectionNoise(payload),      // Adding redirection that does nothing
 		wildcardObfuscation(payload),   // Using wildcards in paths
 		randomizedCase(payload),        // Random capitalization where possible
+		// bashExpansion(payload),         // ${var} style expansion
+		// environmentVariables(payload),  // Environment variable substitution
+		// variableAssignment(payload),    // Simple variable assignment
+
 	)
 
 	// Return basic variants if level is Basic
@@ -122,31 +123,6 @@ func reverseQuote(quote string) string {
 	}
 }
 
-func bashExpansion(payload string) string {
-	parts := strings.Fields(payload)
-	if len(parts) == 0 {
-		return payload
-	}
-
-	// Apply ${x} style expansion to random parts
-	for i := range parts {
-		if rand.Intn(3) == 0 {
-			word := parts[i]
-			if len(word) > 0 {
-				chars := strings.Split(word, "")
-				for j := range chars {
-					if rand.Intn(2) == 0 {
-						chars[j] = "${" + chars[j] + "}"
-					}
-				}
-				parts[i] = strings.Join(chars, "")
-			}
-		}
-	}
-
-	return strings.Join(parts, " ")
-}
-
 func spacingTechniques(payload string) string {
 	words := strings.Fields(payload)
 	result := words[0]
@@ -159,26 +135,6 @@ func spacingTechniques(payload string) string {
 		} else {
 			result += strings.Repeat("\t", 1+rand.Intn(2)) + words[i]
 		}
-	}
-
-	return result
-}
-
-func environmentVariables(payload string) string {
-	parts := strings.Fields(payload)
-	if len(parts) == 0 {
-		return payload
-	}
-
-	// Choose a random common env var to combine with the command
-	envVars := []string{"$HOME", "$PATH", "$PWD", "$SHELL", "$USER"}
-	envVar := envVars[rand.Intn(len(envVars))]
-
-	result := fmt.Sprintf("x=%s; y=%s; echo $x | grep \"$x\" > /dev/null && %s",
-		envVar, parts[0], parts[0])
-
-	if len(parts) > 1 {
-		result += " " + strings.Join(parts[1:], " ")
 	}
 
 	return result
@@ -293,7 +249,6 @@ func wildcardObfuscation(payload string) string {
 		return payload
 	}
 
-	// Only apply to the command portion
 	cmd := parts[0]
 	if len(cmd) <= 2 {
 		return payload
