@@ -6,7 +6,9 @@ ObfusKit is a flexible CLI toolkit designed to test WAF efficacy and application
 Three Levels of Obfuscation/Evasion:
 
 🔹 Basic: Minimal transformations (e.g., simple encoding or path tweaks).
+
 🔸 Medium: Moderate evasions that blend techniques (e.g., mixed encodings, partial command obfuscation).
+
 🔺 Advanced: Aggressive and stealthy evasion strategies meant to bypass well-configured WAFs.
 
 ##Three Obfuscation Categories:
