@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"obfuskit/cmd"
+	"obfuskit/evasions"
 	"strings"
 )
 
@@ -25,7 +26,7 @@ func HTMLVariants(payload string, level cmd.Level) []string {
 	)
 
 	if level == cmd.Basic {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	variants = append(variants,
@@ -40,7 +41,7 @@ func HTMLVariants(payload string, level cmd.Level) []string {
 	)
 
 	if level == cmd.Medium {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	variants = append(variants,
@@ -60,7 +61,7 @@ func HTMLVariants(payload string, level cmd.Level) []string {
 		encodingWithCharacterSets(payload), // Character set tricks
 	)
 
-	return uniqueStrings(variants)
+	return evasions.UniqueStrings(variants)
 }
 
 func toHTMLDecimalEntities(s string) string {

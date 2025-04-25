@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"obfuskit/cmd"
+	"obfuskit/evasions"
 	"regexp"
 	"strings"
 )
@@ -39,7 +40,7 @@ func HexVariants(payload string, level cmd.Level) []string {
 
 	// Return basic variants if level is Basic
 	if level == cmd.Basic {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Medium level adds whitespace character bypasses
@@ -52,7 +53,7 @@ func HexVariants(payload string, level cmd.Level) []string {
 
 	// Return medium variants if level is Medium
 	if level == cmd.Medium {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Advanced level adds null bytes and control characters
@@ -84,7 +85,7 @@ func HexVariants(payload string, level cmd.Level) []string {
 		splitHex(percentEncode(hexLower), "%"), // Split percent encoding
 	)
 
-	return uniqueStrings(variants)
+	return evasions.UniqueStrings(variants)
 }
 
 // appendRandomlyInBetweenWords splits the payload into words and non-words,

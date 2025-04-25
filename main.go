@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	// cmd.Execute()
+	cmd.Execute()
 	rand.Seed(time.Now().UnixNano())
 
 	variants := encoders.HexVariants("test 123 test : talkdjf", cmd.Medium)

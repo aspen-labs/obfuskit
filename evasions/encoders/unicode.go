@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"obfuskit/cmd"
+	"obfuskit/evasions"
 	"strings"
 	"unicode"
 )
@@ -56,7 +57,7 @@ func UnicodeVariants(payload string, level cmd.Level) []string {
 
 	// Return basic variants if level is Basic
 	if level == cmd.Basic {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Generate partial encodings (only encode special characters)
@@ -94,7 +95,7 @@ func UnicodeVariants(payload string, level cmd.Level) []string {
 
 	// Return medium variants if level is Medium
 	if level == cmd.Medium {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Add advanced bypasses for Unicode
@@ -143,7 +144,7 @@ func UnicodeVariants(payload string, level cmd.Level) []string {
 		rtlOverride(payload),
 	)
 
-	return uniqueStrings(variants)
+	return evasions.UniqueStrings(variants)
 }
 
 // insertZeroWidthSpaces inserts zero-width spaces between characters

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"obfuskit/cmd"
+	"obfuskit/evasions"
 	"regexp"
 	"strings"
 )
@@ -31,7 +32,7 @@ func OctalVariants(payload string, level cmd.Level) []string {
 
 	// Return basic variants if level is Basic
 	if level == cmd.Basic {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Medium level adds more evasion techniques
@@ -48,7 +49,7 @@ func OctalVariants(payload string, level cmd.Level) []string {
 
 	// Return medium variants if level is Medium
 	if level == cmd.Medium {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Advanced level adds complex evasion techniques
@@ -67,7 +68,7 @@ func OctalVariants(payload string, level cmd.Level) []string {
 		octalWithWhitespaceVariations(payload), // Various whitespace formats
 	)
 
-	return uniqueStrings(variants)
+	return evasions.UniqueStrings(variants)
 }
 
 // toOctal converts a string to octal representation, optionally with leading zeros

@@ -3,6 +3,7 @@ package encoders
 import (
 	"encoding/base64"
 	"obfuskit/cmd"
+	"obfuskit/evasions"
 	"strings"
 )
 
@@ -28,7 +29,7 @@ func Base64Variants(payload string, level cmd.Level) []string {
 
 	// Return basic variants if level is Basic
 	if level == cmd.Basic {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Medium level adds padding manipulations
@@ -41,7 +42,7 @@ func Base64Variants(payload string, level cmd.Level) []string {
 
 	// Return medium variants if level is Medium
 	if level == cmd.Medium {
-		return uniqueStrings(variants)
+		return evasions.UniqueStrings(variants)
 	}
 
 	// Advanced level adds double encoding and reversed payload encoding
@@ -53,7 +54,7 @@ func Base64Variants(payload string, level cmd.Level) []string {
 	reversedEncoded := base64.StdEncoding.EncodeToString([]byte(reversed))
 	variants = append(variants, reversedEncoded)
 
-	return uniqueStrings(variants)
+	return evasions.UniqueStrings(variants)
 }
 
 // reverse returns the reversed version of input string
@@ -63,19 +64,4 @@ func reverse(s string) string {
 		runes[i], runes[j] = runes[j], runes[i]
 	}
 	return string(runes)
-}
-
-// uniqueStrings removes duplicate strings from the input slice
-func uniqueStrings(input []string) []string {
-	seen := map[string]struct{}{}
-	var result []string
-
-	for _, s := range input {
-		if _, ok := seen[s]; !ok {
-			seen[s] = struct{}{}
-			result = append(result, s)
-		}
-	}
-
-	return result
 }
