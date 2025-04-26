@@ -6,6 +6,7 @@ import (
 	"obfuskit/cmd"
 	"obfuskit/evasions"
 	"strings"
+	"time"
 )
 
 // UnixCmdVariants generates various Unix/Linux command evasion techniques
@@ -22,32 +23,27 @@ func UnixCmdVariants(payload string, level cmd.Level) []string {
 		binaryPathObfuscation(payload), // /usr/bin/ path variations
 		inlineComments(payload),        // Using inline comments #
 		redirectionNoise(payload),      // Adding redirection that does nothing
-		wildcardObfuscation(payload),   // Using wildcards in paths
+		variableAssignment(payload),    // Simple variable assignment
 		randomizedCase(payload),        // Random capitalization where possible
-		// bashExpansion(payload),         // ${var} style expansion
-		// environmentVariables(payload),  // Environment variable substitution
-		// variableAssignment(payload),    // Simple variable assignment
-
 	)
 
-	// Return basic variants if level is Basic
 	if level == cmd.Basic {
 		return evasions.UniqueStrings(variants)
 	}
 
 	// Medium level adds more complex techniques
 	variants = append(variants,
-		bashBraceExpansion(payload),    // Bash brace expansion ${x}
-		hexEncoding(payload),           // Hex encoding of characters
 		commandEvaluation(payload),     // Using eval and similar constructs
-		processSubstitution(payload),   // <() process substitution
+		processSubstitution(payload),   // $() process substitution
 		hereStringTechniques(payload),  // Using here-strings
 		ifs(payload),                   // IFS (Internal Field Separator) modification
 		backticksSubstitution(payload), // Using backticks for command substitution
 		stringConcatenation(payload),   // String concatenation techniques
 		doubleEvaluation(payload),      // Multiple levels of eval
-		teeCommand(payload),            // Using tee for execution
 	)
+
+	variants = append(variants, wildcardPathEvasion(payload)...)
+	variants = append(variants, hexEncoding(payload)...)
 
 	// Return medium variants if level is Medium
 	if level == cmd.Medium {
@@ -57,14 +53,11 @@ func UnixCmdVariants(payload string, level cmd.Level) []string {
 	// Advanced level adds the most complex evasion techniques
 	variants = append(variants,
 		base64Techniques(payload),        // Base64 encoding/decoding
-		binaryExecution(payload),         // /proc/self/fd technique
 		arithmeticExpansion(payload),     // Using arithmetic expansion
-		debuggerAvoidance(payload),       // Techniques to avoid debuggers
 		revShellTechniques(payload),      // Reverse shell techniques
 		fileDescriptorTricks(payload),    // File descriptor manipulation
 		unicodeEscapes(payload),          // Unicode escape sequences
 		runtimeScriptGeneration(payload), // Generate script at runtime
-		fifoTechniques(payload),          // Using FIFO pipes
 		functionObfuscation(payload),     // Function-based obfuscation
 		advancedIFSTricks(payload),       // Advanced IFS manipulation techniques
 	)
@@ -77,6 +70,7 @@ func UnixCmdVariants(payload string, level cmd.Level) []string {
 func backslashEvasion(payload string) string {
 	result := ""
 	for _, char := range payload {
+		// Only backslash-escape regular characters, not special chars
 		if rand.Intn(3) == 0 && char > 32 && char < 127 && char != '\\' && char != '\'' && char != '"' {
 			result += "\\" + string(char)
 		} else {
@@ -90,37 +84,22 @@ func quoteVariations(payload string) string {
 	words := strings.Fields(payload)
 	result := ""
 
-	quoteTypes := []string{"'", "\"", "$'", "\"'", "'\""}
+	quoteTypes := []string{"'", "\""}
 
 	for i, word := range words {
 		if i > 0 {
 			result += " "
 		}
 
-		if i > 0 && rand.Intn(3) == 0 {
+		if rand.Intn(3) == 0 {
 			quoteType := quoteTypes[rand.Intn(len(quoteTypes))]
-			if quoteType == "$'" {
-				// ANSI-C quoting
-				result += "$'" + strings.ReplaceAll(word, "'", "\\'") + "'"
-			} else {
-				result += quoteType + word + reverseQuote(quoteType)
-			}
+			result += quoteType + word + quoteType
 		} else {
 			result += word
 		}
 	}
 
 	return result
-}
-
-func reverseQuote(quote string) string {
-	if quote == "\"'" {
-		return "'\""
-	} else if quote == "'\"" {
-		return "\"'"
-	} else {
-		return quote
-	}
 }
 
 func spacingTechniques(payload string) string {
@@ -141,11 +120,11 @@ func spacingTechniques(payload string) string {
 }
 
 func commandChaining(payload string) string {
-	separators := []string{" ; ", " && ", " || ", " | "}
+	separators := []string{" ; ", " && ", " || "}
 	sep := separators[rand.Intn(len(separators))]
 
 	// Add a harmless command
-	harmlessCommands := []string{"true", ":", "echo ''", "test 1", "[ 1 ]"}
+	harmlessCommands := []string{"true", ":", "/bin/true"}
 	harmless := harmlessCommands[rand.Intn(len(harmlessCommands))]
 
 	if rand.Intn(2) == 0 {
@@ -161,13 +140,11 @@ func binaryPathObfuscation(payload string) string {
 		return payload
 	}
 
-	// Common binary paths and their variations
+	// Common binary paths
 	pathVariations := []string{
 		"/usr/bin/",
 		"/bin/",
-		"/u??/b?n/",
-		"/???/bin/",
-		"`which `",
+		"$(which ",
 	}
 
 	cmd := parts[0]
@@ -175,29 +152,29 @@ func binaryPathObfuscation(payload string) string {
 
 	// Only apply to commands that don't already have a path
 	if !strings.Contains(cmd, "/") {
-		parts[0] = path + cmd
+		if strings.HasPrefix(path, "$(") {
+			parts[0] = path + cmd + ")"
+		} else {
+			parts[0] = path + cmd
+		}
 	}
 
 	return strings.Join(parts, " ")
 }
 
 func inlineComments(payload string) string {
-	parts := strings.Fields(payload)
-	result := parts[0]
+	words := strings.Fields(payload)
+	if len(words) <= 1 {
+		return payload
+	}
 
-	for i := 1; i < len(parts); i++ {
+	result := words[0]
+	for i := 1; i < len(words); i++ {
 		if rand.Intn(4) == 0 {
 			// Add an inline comment between words
-			comments := []string{
-				"#nothing",
-				"#bypass",
-				"#comment",
-				"#ignored",
-			}
-			comment := comments[rand.Intn(len(comments))]
-			result += " " + comment + "\n" + parts[i]
+			result += " # Ignored comment\n" + words[i]
 		} else {
-			result += " " + parts[i]
+			result += " " + words[i]
 		}
 	}
 
@@ -225,42 +202,29 @@ func redirectionNoise(payload string) string {
 		" 2>/dev/null",
 		" >/dev/null",
 		" 2>&1",
-		" 2>/dev/null 1>&2",
-		" </dev/null",
 	}
 
-	// Add 1-2 redirections
-	count := 1 + rand.Intn(2)
-	result := payload
-
-	for i := 0; i < count; i++ {
-		redirection := redirections[rand.Intn(len(redirections))]
-		if !strings.Contains(result, redirection) {
-			result += redirection
-		}
-	}
-
-	return result
+	// Add 1 redirection
+	redirection := redirections[rand.Intn(len(redirections))]
+	return payload + redirection
 }
 
-func wildcardObfuscation(payload string) string {
+func randomizedCase(payload string) string {
+	// Only apply to commands where case doesn't matter
 	parts := strings.Fields(payload)
 	if len(parts) == 0 {
 		return payload
 	}
 
-	cmd := parts[0]
-	if len(cmd) <= 2 {
-		return payload
-	}
-
-	// Insert wildcards within the command name
 	result := ""
-	for i, c := range cmd {
-		if i > 0 && i < len(cmd)-1 && rand.Intn(3) == 0 {
-			result += string(c) + "?"
+	cmd := parts[0]
+
+	// Only uppercase some letters in the command
+	for _, char := range cmd {
+		if char >= 'a' && char <= 'z' && rand.Intn(3) == 0 {
+			result += strings.ToUpper(string(char))
 		} else {
-			result += string(c)
+			result += string(char)
 		}
 	}
 
@@ -268,43 +232,84 @@ func wildcardObfuscation(payload string) string {
 	return strings.Join(parts, " ")
 }
 
-func randomizedCase(payload string) string {
-	result := ""
-	for _, char := range payload {
-		if char >= 'a' && char <= 'z' && rand.Intn(3) == 0 {
-			result += strings.ToUpper(string(char))
-		} else if char >= 'A' && char <= 'Z' && rand.Intn(3) == 0 {
-			result += strings.ToLower(string(char))
-		} else {
-			result += string(char)
-		}
+// Medium evasion techniques
+
+func randomVarName() string {
+	const letters = "abcdefghijklmnopqrstuvwxyz"
+	rand.Seed(time.Now().UnixNano())
+	length := rand.Intn(3) + 2 // random length between 2-4
+	var name strings.Builder
+	for i := 0; i < length; i++ {
+		name.WriteByte(letters[rand.Intn(len(letters))])
 	}
+	return name.String()
+}
+
+func splitStringRandomly(s string) []string {
+	if len(s) <= 2 {
+		return []string{s}
+	}
+
+	parts := []string{}
+	start := 0
+	splits := 1
+	if len(s) > 5 {
+		splits = rand.Intn(2) + 2 // 2 or 3 parts
+	}
+	splitPoints := []int{}
+	for i := 0; i < splits-1; i++ {
+		point := rand.Intn(len(s)-1) + 1
+		splitPoints = append(splitPoints, point)
+	}
+	splitPoints = append(splitPoints, len(s))
+
+	sortInts(splitPoints)
+
+	for _, end := range splitPoints {
+		parts = append(parts, s[start:end])
+		start = end
+	}
+	return parts
+}
+
+func stringConcatenation(payload string) string {
+	parts := strings.Fields(payload)
+	if len(parts) == 0 {
+		return payload
+	}
+
+	assignments := []string{}
+	reassembledParts := []string{}
+
+	for _, part := range parts {
+		fragments := splitStringRandomly(part)
+		varNames := []string{}
+		for _, frag := range fragments {
+			varName := randomVarName()
+			assignments = append(assignments, fmt.Sprintf("%s='%s'", varName, frag))
+			varNames = append(varNames, varName)
+		}
+		reassembledParts = append(reassembledParts, fmt.Sprintf("${%s}", strings.Join(varNames, "}${")))
+	}
+
+	result := strings.Join(assignments, "; ") + "; " + strings.Join(reassembledParts, " ")
 	return result
 }
 
-// Medium evasion techniques
-
-func bashBraceExpansion(payload string) string {
-	parts := strings.Fields(payload)
-	if len(parts) == 0 {
-		return payload
-	}
-
-	// Replace with brace expansion
-	for i, part := range parts {
-		if len(part) > 2 && rand.Intn(2) == 0 {
-			midpoint := len(part) / 2
-			parts[i] = part[:midpoint] + "{" + part[midpoint:] + "}"
+func sortInts(nums []int) {
+	for i := 0; i < len(nums); i++ {
+		for j := i + 1; j < len(nums); j++ {
+			if nums[j] < nums[i] {
+				nums[i], nums[j] = nums[j], nums[i]
+			}
 		}
 	}
-
-	return strings.Join(parts, " ")
 }
 
-func hexEncoding(payload string) string {
+func hexEncoding(payload string) []string {
 	parts := strings.Fields(payload)
 	if len(parts) == 0 {
-		return payload
+		return []string{payload}
 	}
 
 	// Convert the command to hex
@@ -319,74 +324,53 @@ func hexEncoding(payload string) string {
 		}
 	}
 
-	result := "$'" + hexCmd + "'"
-
-	if len(parts) > 1 {
-		result += " " + strings.Join(parts[1:], " ")
+	parts[0] = "$'" + hexCmd + "'"
+	if len(parts) == 1 {
+		return []string{strings.Join(parts, " ")}
 	}
 
-	return result
+	argsVariants := [][]string{
+		obfuscateArgs(parts[1:], onlyQuestionMark),
+		obfuscateArgs(parts[1:], onlyStar),
+		obfuscateArgs(parts[1:], mixStarQuestionMark),
+	}
+
+	var finalPayloads []string
+
+	for _, args := range argsVariants {
+		finalPayloads = append(finalPayloads, strings.Join(parts[0:1], " ")+" "+strings.Join(args, " "))
+	}
+
+	finalPayloads = append(finalPayloads, strings.Join(parts, " "))
+	return finalPayloads
 }
 
 func commandEvaluation(payload string) string {
 	evalFunctions := []string{
 		"eval",
-		"$(eval echo '%s')",
-		"bash -c '%s'",
-		"/bin/sh -c '%s'",
+		"bash -c",
 	}
 
 	evalFunc := evalFunctions[rand.Intn(len(evalFunctions))]
 
-	if strings.Contains(evalFunc, "%s") {
-		return fmt.Sprintf(evalFunc, payload)
+	if evalFunc == "eval" {
+		return evalFunc + " '" + payload + "'"
 	} else {
 		return evalFunc + " '" + payload + "'"
 	}
 }
 
 func processSubstitution(payload string) string {
-	parts := strings.Fields(payload)
-	if len(parts) == 0 {
-		return payload
-	}
-
-	cmd := parts[0]
-	args := ""
-	if len(parts) > 1 {
-		args = " " + strings.Join(parts[1:], " ")
-	}
-
-	return fmt.Sprintf("bash -c \"$(echo '%s')%s\"", cmd, args)
+	return "$(echo '" + payload + "')"
 }
 
 func hereStringTechniques(payload string) string {
-	parts := strings.Fields(payload)
-	if len(parts) == 0 {
-		return payload
-	}
-
-	cmd := parts[0]
-	args := ""
-	if len(parts) > 1 {
-		args = " " + strings.Join(parts[1:], " ")
-	}
-
-	return fmt.Sprintf("bash <<< \"%s%s\"", cmd, args)
+	return "bash <<< \"" + payload + "\""
 }
 
 func ifs(payload string) string {
-	parts := strings.Fields(payload)
-	if len(parts) == 0 {
-		return payload
-	}
-
-	// Manipulate IFS to change word splitting behavior
-	oldIFS := "oldIFS=$IFS"
-	newIFS := "IFS=,$IFS"
-	resetIFS := "IFS=$oldIFS"
-
-	return fmt.Sprintf("%s; %s; %s; %s", oldIFS, newIFS, payload, resetIFS)
+	// Simpler IFS modification that actually works
+	return "IFS=' '; " + payload
 }
 
 func backticksSubstitution(payload string) string {
@@ -405,54 +389,20 @@ func backticksSubstitution(payload string) string {
 	return fmt.Sprintf("`echo %s`%s", cmd, args)
 }
 
-func stringConcatenation(payload string) string {
-	parts := strings.Fields(payload)
-	if len(parts) == 0 {
-		return payload
-	}
-
-	cmd := parts[0]
-	if len(cmd) < 3 {
-		return payload
-	}
-
-	// Split into multiple variables
-	midpoint := len(cmd) / 2
-	var1 := cmd[:midpoint]
-	var2 := cmd[midpoint:]
-
-	result := fmt.Sprintf("a=%s; b=%s; ${a}${b}", var1, var2)
-
-	if len(parts) > 1 {
-		result += " " + strings.Join(parts[1:], " ")
-	}
-
-	return result
-}
-
 func doubleEvaluation(payload string) string {
-	// Use multiple layers of eval
-	encoded := strings.ReplaceAll(payload, " ", "\\ ")
-	return fmt.Sprintf("eval eval echo %s", encoded)
-}
-
-func teeCommand(payload string) string {
-	// Use tee to write to a temporary file and execute
-	return fmt.Sprintf("echo '%s' | tee /dev/shm/.cmd$$ && bash /dev/shm/.cmd$$ && rm /dev/shm/.cmd$$", payload)
+	// Use a single layer of eval with proper quoting
+	return fmt.Sprintf("eval \"echo '%s' | bash\"", payload)
 }
 
 // Advanced evasion techniques
 
 func base64Techniques(payload string) string {
-	// This would actually base64 encode in a real implementation
-	// For this example, we'll use a placeholder
-	encodedPayload := "ZWNobyAiaGVsbG8gd29ybGQi" // Example base64
+	// This function would actually base64 encode in a real implementation
+	// base64Command := fmt.Sprintf("echo '%s' | base64", payload)
+	// In a real implementation, you'd run this command, capture the output,
+	// and use it in the following command:
+	encodedPayload := "ZWNobyAiaGVsbG8gd29ybGQi" // Placeholder example
 	return fmt.Sprintf("echo %s | base64 -d | bash", encodedPayload)
-}
-
-func binaryExecution(payload string) string {
-	// Execute through /proc/self/fd trick
-	return fmt.Sprintf("echo '%s' > /dev/shm/.cmd$$ && exec /bin/bash /proc/self/fd/$(echo $(ls -la /dev/shm/.cmd$$ | awk '{print $4}') | sed 's/[^0-9]//g')", payload)
 }
 
 func arithmeticExpansion(payload string) string {
@@ -461,84 +411,52 @@ func arithmeticExpansion(payload string) string {
 		return payload
 	}
 
-	chars := []byte(parts[0])
-	var charCodes []string
-
-	for _, c := range chars {
-		charCodes = append(charCodes, fmt.Sprintf("%d", c))
+	// Convert first character to ASCII code for demonstration
+	cmd := parts[0]
+	if len(cmd) > 0 {
+		firstChar := int(cmd[0])
+		cmdVar := fmt.Sprintf("$(printf \\$(printf '%03o' %d))", firstChar) + cmd[1:]
+		parts[0] = cmdVar
 	}
 
-	// Build command using arithmetic expansion
-	var commands []string
-	for i, code := range charCodes {
-		commands = append(commands, fmt.Sprintf("c%d=$((10#%s))", i, code))
-	}
-
-	// Build the command string from character codes
-	commandBuilder := "cmd=$("
-	for i := range charCodes {
-		commandBuilder += fmt.Sprintf("printf \\\\$(printf '%03o' $c%d)", i)
-	}
-	commandBuilder += ")"
-
-	args := ""
-	if len(parts) > 1 {
-		args = " " + strings.Join(parts[1:], " ")
-	}
-
-	return strings.Join(commands, ";") + ";" + commandBuilder + "; $cmd" + args
-}
-
-func debuggerAvoidance(payload string) string {
-	// Techniques to detect and avoid debuggers/sandbox
-	checks := []string{
-		"[ -z \"$HISTFILE\" ] && exit 1 || ",
-		"[ ! -z \"$DEBUG\" ] && exit 1 || ",
-		"(set -x; : ) 2>&1 | grep -q x && exit 1 || ",
-	}
-
-	check := checks[rand.Intn(len(checks))]
-	return check + payload
+	return strings.Join(parts, " ")
 }
 
 func revShellTechniques(payload string) string {
-	// Variation on reverse shell pattern (not actual rev shell)
-	return fmt.Sprintf("(sh -c '%s' > /dev/null 2>&1 &)", payload)
+	// Simpler background execution pattern
+	return fmt.Sprintf("(exec %s) &", payload)
 }
 
 func fileDescriptorTricks(payload string) string {
-	// File descriptor manipulation
-	fdTricks := []string{
-		"exec 3>&1; %s >&3 3>&-; exec 3>&-",
-		"exec 3<&0; %s <&3 3<&-; exec 3<&-",
-		"{ %s; } 2>&1",
-	}
-
-	fdTrick := fdTricks[rand.Intn(len(fdTricks))]
-	return fmt.Sprintf(fdTrick, payload)
+	// File descriptor redirection that actually works
+	return fmt.Sprintf("{ %s; } 2>&1", payload)
 }
 
 func unicodeEscapes(payload string) string {
-	result := ""
-	for _, c := range payload {
+	parts := strings.Fields(payload)
+	if len(parts) == 0 {
+		return payload
+	}
+
+	cmd := parts[0]
+	unicodeCmd := ""
+
+	// Only convert a few characters to unicode escapes
+	for _, c := range cmd {
 		if rand.Intn(3) == 0 && c > 32 && c < 127 {
-			result += fmt.Sprintf("\\u%04X", c)
+			unicodeCmd += fmt.Sprintf("\\u%04x", c)
 		} else {
-			result += string(c)
+			unicodeCmd += string(c)
 		}
 	}
 
-	return fmt.Sprintf("$'%s'", result)
+	parts[0] = "$'" + unicodeCmd + "'"
+	return strings.Join(parts, " ")
 }
 
 func runtimeScriptGeneration(payload string) string {
 	// Generate a script at runtime and execute it
-	return fmt.Sprintf("cat > /dev/shm/.s$$ << 'EOF'\n#!/bin/bash\n%s\nEOF\nchmod +x /dev/shm/.s$$ && /dev/shm/.s$$ && rm /dev/shm/.s$$", payload)
-}
-
-func fifoTechniques(payload string) string {
-	// Use FIFO pipes for obfuscation
-	return fmt.Sprintf("rm -f /tmp/f; mkfifo /tmp/f; cat /tmp/f | bash -i 2>&1 | { read; echo '%s'; } > /tmp/f; sleep 1; rm -f /tmp/f", payload)
+	return fmt.Sprintf("cat > /tmp/.s$$ << 'EOF'\n#!/bin/bash\n%s\nEOF\nchmod +x /tmp/.s$$ && /tmp/.s$$ && rm /tmp/.s$$", payload)
 }
 
 func functionObfuscation(payload string) string {
@@ -559,20 +477,138 @@ func functionObfuscation(payload string) string {
 }
 
 func advancedIFSTricks(payload string) string {
-	// Advanced IFS manipulation for splitting commands
-	ifsTricks := []string{
-		"IFS=,; set -- %s; IFS=$' \t\n'; $1 ${@:2}",
-		"IFS=$'\\x01'; set -- %s; IFS=$' \t\n'; $1 ${@:2}",
-		"IFS=$'\\n'; set -- $(echo \"%s\" | tr ' ' '\\n'); IFS=$' \t\\n'; \"$@\"",
+	// Simpler IFS trick that actually works
+	parts := strings.Fields(payload)
+	if len(parts) == 0 {
+		return payload
 	}
 
-	// Replace spaces with commas for the first two variants
-	commaPayload := strings.ReplaceAll(payload, " ", ",")
+	// Set IFS to newline and recompose the command
+	return fmt.Sprintf("IFS=$'\\n'; cmd=(%s); \"${cmd[@]}\"",
+		strings.Join(parts, "$'\\n'"))
+}
 
-	ifsTrick := ifsTricks[rand.Intn(len(ifsTricks))]
-	if rand.Intn(2) == 0 {
-		return fmt.Sprintf(ifsTrick, commaPayload)
+/*
+	Returns a list of 3 versions:
+	cat /e??/p?ss??
+	/u?r/??n/c?t /e??/p?ss??
+	cat /e??/p?ss??
+*/
+
+func wildcardPathEvasion(payload string) []string {
+
+	if payload == "" || !strings.Contains(payload, "/") {
+		return nil
+	}
+
+	parts := strings.Fields(payload)
+	if len(parts) == 0 {
+		return nil
+	}
+
+	cmd := parts[0]
+	prefixes := []string{
+		"/usr/bin/", "/usr/local/bin/", "/bin/",
+		"/usr/sbin/", "/usr/local/sbin/",
+		"/u?r/??n/", "/u?r/l?c?l/b??/",
+		"/b?n/", "/u?r/s?b?/", "/u?r/l?c?l/s?b?/", "",
+	}
+
+	newPrefixes := buildPrefixes(cmd, prefixes)
+
+	// Process arguments
+	argsVariants := [][]string{
+		obfuscateArgs(parts[1:], onlyQuestionMark),
+		obfuscateArgs(parts[1:], onlyStar),
+		obfuscateArgs(parts[1:], mixStarQuestionMark),
+	}
+
+	var finalPayloads []string
+	for _, args := range argsVariants {
+		for _, prefix := range newPrefixes {
+			finalPayloads = append(finalPayloads, combine(prefix, args))
+		}
+	}
+
+	return finalPayloads
+}
+
+func buildPrefixes(cmd string, prefixes []string) []string {
+	var result []string
+	result = append(result, cmd)
+
+	if strings.Contains(cmd, "/") {
+		lastPart := cmd[strings.LastIndex(cmd, "/"):]
+		for _, prefix := range prefixes {
+			result = append(result, prefix+lastPart)
+		}
 	} else {
-		return fmt.Sprintf(ifsTrick, payload)
+		for _, prefix := range prefixes {
+			result = append(result, prefix+cmd)
+		}
 	}
+	return result
+}
+
+func obfuscateArgs(args []string, obfuscateFunc func(string) string) []string {
+	var obfuscated []string
+	for _, arg := range args {
+		if strings.Contains(arg, "/") {
+			obfuscated = append(obfuscated, obfuscateFunc(arg))
+		} else {
+			obfuscated = append(obfuscated, arg)
+		}
+	}
+	return obfuscated
+}
+
+func onlyQuestionMark(s string) string {
+	var b strings.Builder
+	for _, ch := range s {
+		if ch == '/' {
+			b.WriteRune(ch)
+		} else if rand.Intn(3) == 0 {
+			b.WriteByte('?')
+		} else {
+			b.WriteRune(ch)
+		}
+	}
+	return b.String()
+}
+
+func onlyStar(s string) string {
+	var b strings.Builder
+	for _, ch := range s {
+		if ch == '/' {
+			b.WriteRune(ch)
+		} else if rand.Intn(3) == 0 {
+			b.WriteByte('*')
+		} else {
+			b.WriteRune(ch)
+		}
+	}
+	return b.String()
+}
+
+func mixStarQuestionMark(s string) string {
+	var b strings.Builder
+	for _, ch := range s {
+		if ch == '/' {
+			b.WriteRune(ch)
+		} else {
+			switch rand.Intn(3) {
+			case 0:
+				b.WriteByte('?')
+			case 1:
+				b.WriteByte('*')
+			default:
+				b.WriteRune(ch)
+			}
+		}
+	}
+	return b.String()
+}
+
+func combine(prefix string, args []string) string {
+	return prefix + " " + strings.Join(args, " ")
 }
