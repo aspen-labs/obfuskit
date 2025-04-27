@@ -1,0 +1,12 @@
+*)(uid=*))(|(uid=*
+*)(objectClass=*))(|(objectClass=*
+*)(uid=*))(|(uid=*))(&(uid=admin)
+*)(objectClass=*))(|(objectClass=*))(&(objectClass=person)
+admin*)(|(password=*)
+*)(|(password=*))(&(uid=admin)
+*)(uid=*admin*
+*)(objectClass=*person*
+\29\28uid=\2a\29\28\7c\28uid=\2a
+\29\28objectClass=\2a\29\28\7c\28objectClass=\2a
+*)(cn=*))(|(cn=*
+*)(sn=*))(|(sn=*# 921200 LDAP Injection Attack

