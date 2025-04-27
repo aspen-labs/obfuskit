@@ -2,20 +2,35 @@ package main
 
 import (
 	"fmt"
-	"obfuskit/cmd"
-	"obfuskit/evasions/command"
+	"obfuskit/report"
+	"obfuskit/request"
+	"time"
 )
 
 func main() {
-	// cmd.Execute()
-	// rand.Seed(time.Now().UnixNano())
+	results := []request.TestResult{
+		{
+			Payload:          "<script>alert(1)</script>",
+			EvasionTechnique: "None",
+			RequestPart:      "Body",
+			StatusCode:       403,
+			ResponseTime:     50 * time.Millisecond,
+			Blocked:          true,
+		},
+		{
+			Payload:          "SELECT * FROM users",
+			EvasionTechnique: "Case Manipulation",
+			RequestPart:      "URL",
+			StatusCode:       200,
+			ResponseTime:     30 * time.Millisecond,
+			Blocked:          false,
+		},
+	}
 
-	// variants := encoders.HexVariants("test 123 test : talkdjf", cmd.Medium)
-	// variants = append(variants, encoders.Base64Variants("test", cmd.Medium)...)
-	// variants := command.UnixCmdVariants("cat /etc/passwd", cmd.Medium)
-	variants := command.WindowsCmdVariants("dir dir C:\\Windows\\System32", cmd.Medium)
-	// Print variants one by one
-	for _, variant := range variants {
-		fmt.Println(variant)
+	err := report.GeneratePDFReport(results, "security_report.pdf")
+	if err != nil {
+		fmt.Printf("Error generating PDF report: %v\n", err)
+	} else {
+		fmt.Println("PDF report generated successfully!")
 	}
 }
