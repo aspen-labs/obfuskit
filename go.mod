@@ -2,12 +2,14 @@ module obfuskit
 
 go 1.23.4
 
-require github.com/spf13/cobra v1.9.1
+require (
+	github.com/fatih/color v1.18.0
+	github.com/jung-kurt/gofpdf v1.16.2
+	github.com/spf13/cobra v1.9.1
+)
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
-	github.com/fatih/color v1.18.0 // indirect
-	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
@@ -16,8 +18,8 @@ require (
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/bubbles v0.21.0 // indirect
-	github.com/charmbracelet/bubbletea v1.3.4 // indirect
+	github.com/charmbracelet/bubbles v0.21.0
+	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect

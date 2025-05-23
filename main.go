@@ -2,35 +2,43 @@ package main
 
 import (
 	"fmt"
-	"obfuskit/report"
-	"obfuskit/request"
-	"time"
+	"obfuskit/cmd"
 )
 
 func main() {
-	results := []request.TestResult{
-		{
-			Payload:          "<script>alert(1)</script>",
-			EvasionTechnique: "None",
-			RequestPart:      "Body",
-			StatusCode:       403,
-			ResponseTime:     50 * time.Millisecond,
-			Blocked:          true,
-		},
-		{
-			Payload:          "SELECT * FROM users",
-			EvasionTechnique: "Case Manipulation",
-			RequestPart:      "URL",
-			StatusCode:       200,
-			ResponseTime:     30 * time.Millisecond,
-			Blocked:          false,
-		},
-	}
+	/*
+		Input is going to be interactive.
+		1. You pick an attack/leave it upto us.
+		2. You pick a payload/leave it upto us.
+		3. You pick a target/we add it to file
+		4. You pick a report type/leave it upto us
+	*/
+	finalSelection := cmd.GetFinalSelection()
+	fmt.Println("Chosen action:", finalSelection.Selection)
+	fmt.Println("Chosen attack:", finalSelection.SelectedAttack)
+	fmt.Println("Chosen payload:", finalSelection.SelectedPayload)
+	fmt.Println("Chosen target:", finalSelection.SelectedTarget)
+	fmt.Println("Chosen report type:", finalSelection.SelectedReportType)
 
-	err := report.GeneratePDFReport(results, "security_report.pdf")
-	if err != nil {
-		fmt.Printf("Error generating PDF report: %v\n", err)
-	} else {
-		fmt.Println("PDF report generated successfully!")
-	}
+	// results, err := request.RunTests(
+	// 	request.WithTargetURL("http://3txqcwxqw466fnzzw1wh10yyhpngb7zw.oastify.com"),
+	// 	request.WithPayloadFile("payloads.txt"),
+	// 	request.WithLogLevel("info"),
+	// 	request.WithConcurrency(5), // Use 5 concurrent workers
+	// )
+
+	// if err != nil {
+	// 	fmt.Printf("Error running tests: %v\n", err)
+	// 	os.Exit(1)
+	// }
+
+	// // Create a default logger if one doesn't exist
+	// logger, _ := request.ConfigureLogging("log.txt", "info")
+
+	// // Write results to CSV file
+	// outputFile := "results_" + time.Now().Format("20060102_150405") + ".csv"
+	// if err := request.WriteResultsToFile(results, outputFile, "csv", logger); err != nil {
+	// 	fmt.Printf("Error writing results: %v\n", err)
+	// }
+
 }

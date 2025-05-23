@@ -66,7 +66,6 @@ func UnixCmdVariants(payload string, level cmd.Level) []string {
 }
 
 // Basic evasion techniques
-
 func backslashEvasion(payload string) string {
 	result := ""
 	for _, char := range payload {

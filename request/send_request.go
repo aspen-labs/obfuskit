@@ -31,7 +31,6 @@ const (
 	LogLevelError = "ERROR"
 )
 
-// Logger handles all logging operations
 type Logger struct {
 	debug *log.Logger
 	info  *log.Logger
@@ -39,7 +38,6 @@ type Logger struct {
 	error *log.Logger
 }
 
-// NewLogger creates a new logger instance that writes to the specified output
 func NewLogger(out *os.File) *Logger {
 	return &Logger{
 		debug: log.New(out, "[DEBUG] ", log.Ldate|log.Ltime|log.Lshortfile),
@@ -49,10 +47,10 @@ func NewLogger(out *os.File) *Logger {
 	}
 }
 
-// Default logger that writes to stdout
 var defaultLogger = NewLogger(os.Stdout)
 
 type TestResult struct {
+	Request          *fasthttp.Request
 	Payload          string
 	EvasionTechnique string
 	RequestPart      string
@@ -87,7 +85,6 @@ func (e *URLEncoder) Transform(payload string) string {
 	return url.QueryEscape(payload)
 }
 
-// Double URL encoding transformer
 type DoubleURLEncoder struct{}
 
 func (e *DoubleURLEncoder) Name() string {
@@ -98,7 +95,6 @@ func (e *DoubleURLEncoder) Transform(payload string) string {
 	return url.QueryEscape(url.QueryEscape(payload))
 }
 
-// Base64 encoding transformer
 type Base64Encoder struct{}
 
 func (e *Base64Encoder) Name() string {
@@ -109,7 +105,6 @@ func (e *Base64Encoder) Transform(payload string) string {
 	return base64.StdEncoding.EncodeToString([]byte(payload))
 }
 
-// Line folding transformer for HTTP headers
 type LineFoldingTransformer struct{}
 
 func (e *LineFoldingTransformer) Name() string {
@@ -121,18 +116,15 @@ func (e *LineFoldingTransformer) Transform(payload string) string {
 		return payload
 	}
 
-	// Split the payload roughly in the middle and add line folding
 	midpoint := len(payload) / 2
 	return payload[:midpoint] + "\r\n " + payload[midpoint:]
 }
 
-// FastHTTPInjector is the base injector interface using fasthttp
 type FastHTTPInjector interface {
 	Name() string
 	Inject(targetURL string, payload string, logger *Logger) []TestResult
 }
 
-// FastHTTPHeaderInjector injects payloads into HTTP headers
 type FastHTTPHeaderInjector struct {
 	transformers []EncodingTransformer
 }
@@ -156,7 +148,6 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 
 	logger.info.Printf("Starting header injection test with payload: %s", payload)
 
-	// Basic header injection
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
@@ -172,6 +163,7 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "basic_header",
 			RequestPart:      "header",
@@ -204,6 +196,7 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 
 		if err == nil {
 			result := TestResult{
+				Request:          req,
 				Payload:          payload,
 				EvasionTechnique: "header_" + transformer.Name(),
 				RequestPart:      "header",
@@ -238,6 +231,7 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "manual_line_folding",
 			RequestPart:      "header",
@@ -267,6 +261,7 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "duplicate_header",
 			RequestPart:      "header",
@@ -307,7 +302,6 @@ func (i *FastHTTPQueryInjector) Inject(targetURL string, payload string, logger 
 
 	logger.info.Printf("Starting query injection test with payload: %s", payload)
 
-	// Parse the URL to modify the query string
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
 		logger.error.Printf("Failed to parse URL %s: %v", targetURL, err)
@@ -334,6 +328,7 @@ func (i *FastHTTPQueryInjector) Inject(targetURL string, payload string, logger 
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "basic_query_param",
 			RequestPart:      "query",
@@ -367,6 +362,7 @@ func (i *FastHTTPQueryInjector) Inject(targetURL string, payload string, logger 
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "duplicate_query_param",
 			RequestPart:      "query",
@@ -426,6 +422,7 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "basic_form_param",
 			RequestPart:      "body",
@@ -456,6 +453,7 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "basic_json_param",
 			RequestPart:      "body",
@@ -486,6 +484,7 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "duplicate_form_param",
 			RequestPart:      "body",
@@ -515,6 +514,7 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "content_type_mismatch",
 			RequestPart:      "body",
@@ -566,6 +566,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 
 		if err == nil {
 			result := TestResult{
+				Request:          req,
 				Payload:          payload,
 				EvasionTechnique: "unusual_http_method_" + method,
 				RequestPart:      "method",
@@ -598,6 +599,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "header_line_folding",
 			RequestPart:      "header",
@@ -620,8 +622,6 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Transfer-Encoding", "chunked")
 
-	// Manually create a chunked request body
-	// Format: [chunk size in hex]\r\n[chunk data]\r\n[0]\r\n\r\n
 	chunkData := fmt.Sprintf("param=%s", payload)
 	chunkSize := fmt.Sprintf("%x", len(chunkData))
 	chunkedBody := chunkSize + "\r\n" + chunkData + "\r\n0\r\n\r\n"
@@ -635,6 +635,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "chunked_encoding",
 			RequestPart:      "body",
@@ -648,7 +649,6 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 		logger.error.Printf("Chunked encoding test failed: %v", err)
 	}
 
-	// Multiple content-length headers
 	req = fasthttp.AcquireRequest()
 	resp = fasthttp.AcquireResponse()
 
@@ -671,6 +671,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 
 	if err == nil {
 		result := TestResult{
+			Request:          req,
 			Payload:          payload,
 			EvasionTechnique: "multiple_content_length",
 			RequestPart:      "header",
@@ -722,19 +723,16 @@ func loadPayloads(filename string, logger *Logger) ([]string, error) {
 	return payloads, nil
 }
 
-// ConfigureLogging sets up logging with the specified configuration
 func ConfigureLogging(logFile string, logLevel string) (*Logger, error) {
 	var logger *Logger
 
 	if logFile != "" {
-		// Open log file
 		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open log file: %v", err)
 		}
 		logger = NewLogger(file)
 	} else {
-		// Use stdout if no file specified
 		logger = NewLogger(os.Stdout)
 	}
 
@@ -742,7 +740,6 @@ func ConfigureLogging(logFile string, logLevel string) (*Logger, error) {
 }
 
 func SendRequestsFromPayloadFile(payloadFile string, targetURL string, logFile string, logLevel string) {
-	// Set up logging
 	logger, err := ConfigureLogging(logFile, logLevel)
 	if err != nil {
 		fmt.Printf("Error setting up logging: %v\n", err)
@@ -775,12 +772,10 @@ func SendRequests(payloads []string, targetURL string, logger *Logger) {
 		NewFastHTTPProtocolInjector(),
 	}
 
-	// Run all tests and collect results
 	var allResults []TestResult
 	totalTests := 0
 	blockedTests := 0
 
-	// For better performance, you could use goroutines and a worker pool here
 	for payloadIndex, payload := range payloads {
 		logger.info.Printf("Testing payload %d/%d: %s", payloadIndex+1, len(payloads), payload)
 
@@ -813,10 +808,8 @@ func SendRequests(payloads []string, targetURL string, logger *Logger) {
 		len(payloads), totalTests, blockedTests, float64(blockedTests)/float64(totalTests)*100)
 }
 
-// Option type for configuring the test runner
 type Option func(*TestConfig)
 
-// TestConfig holds configuration options for the request testing
 type TestConfig struct {
 	TargetURL      string
 	PayloadFile    string
@@ -828,13 +821,12 @@ type TestConfig struct {
 	Concurrency    int
 }
 
-// DefaultConfig returns a default configuration
 func DefaultConfig() *TestConfig {
 	return &TestConfig{
 		LogLevel:       LogLevelInfo,
 		OutputFormat:   "text",
 		RequestTimeout: 10 * time.Second,
-		Concurrency:    5, // Default to 5 concurrent workers
+		Concurrency:    5,
 	}
 }
 
@@ -921,7 +913,6 @@ func RunTests(options ...Option) ([]TestResult, error) {
 		logger.info.Printf("Running tests sequentially for %d payloads", len(payloads))
 		allResults = runSequentialTests(payloads, config.TargetURL, logger)
 	} else {
-		// Run concurrently
 		logger.info.Printf("Running tests concurrently with %d workers for %d payloads",
 			config.Concurrency, len(payloads))
 		allResults = runConcurrentTests(payloads, config.TargetURL, config.Concurrency, logger)
@@ -968,30 +959,24 @@ func runSequentialTests(payloads []string, targetURL string, logger *Logger) []T
 	return allResults
 }
 
-// runConcurrentTests runs the tests concurrently using a worker pool
 func runConcurrentTests(payloads []string, targetURL string, concurrency int, logger *Logger) []TestResult {
-	// Create channels for work distribution and result collection
 	jobs := make(chan string, len(payloads))
 	results := make(chan []TestResult, len(payloads))
 
-	// Create worker pool
 	for w := 1; w <= concurrency; w++ {
 		go worker(w, jobs, results, targetURL, logger)
 	}
 
-	// Send jobs to workers
 	for _, payload := range payloads {
 		jobs <- payload
 	}
 	close(jobs)
 
-	// Collect results
 	var allResults []TestResult
 	for i := 0; i < len(payloads); i++ {
 		batchResults := <-results
 		allResults = append(allResults, batchResults...)
 
-		// Log progress periodically
 		if (i+1)%10 == 0 || i == len(payloads)-1 {
 			logger.info.Printf("Progress: %d/%d payloads (%.1f%%)",
 				i+1, len(payloads), float64(i+1)/float64(len(payloads))*100)
@@ -1001,7 +986,6 @@ func runConcurrentTests(payloads []string, targetURL string, concurrency int, lo
 	return allResults
 }
 
-// worker processes payloads concurrently
 func worker(id int, jobs <-chan string, results chan<- []TestResult, targetURL string, logger *Logger) {
 	injectors := []FastHTTPInjector{
 		NewFastHTTPHeaderInjector(),
@@ -1030,7 +1014,6 @@ func worker(id int, jobs <-chan string, results chan<- []TestResult, targetURL s
 	}
 }
 
-// WriteResultsToFile writes test results to a file in the specified format
 func WriteResultsToFile(results []TestResult, filename string, format string, logger *Logger) error {
 	logger.info.Printf("Writing %d results to %s in %s format", len(results), filename, format)
 
@@ -1043,10 +1026,11 @@ func WriteResultsToFile(results []TestResult, filename string, format string, lo
 
 	switch format {
 	case "csv":
-		file.WriteString("Payload,EvasionTechnique,RequestPart,StatusCode,ResponseTime,Blocked\n")
+		file.WriteString("Request,Payload,EvasionTechnique,RequestPart,StatusCode,ResponseTime,Blocked\n")
 
 		for _, result := range results {
-			file.WriteString(fmt.Sprintf("%s,%s,%s,%d,%s,%t\n",
+			file.WriteString(fmt.Sprintf("%s,%s,%s,%s,%d,%s,%t\n",
+				result.Request.String(),
 				strings.ReplaceAll(result.Payload, ",", "\\,"),
 				result.EvasionTechnique,
 				result.RequestPart,
@@ -1060,6 +1044,7 @@ func WriteResultsToFile(results []TestResult, filename string, format string, lo
 		file.WriteString("[\n")
 		for i, result := range results {
 			file.WriteString(fmt.Sprintf(`  {
+    "request": "%s",
     "payload": "%s",
     "evasion_technique": "%s",
     "request_part": "%s",
@@ -1067,6 +1052,7 @@ func WriteResultsToFile(results []TestResult, filename string, format string, lo
     "response_time": "%s",
     "blocked": %t
   }`,
+				strings.ReplaceAll(result.Request.String(), `"`, `\"`),
 				strings.ReplaceAll(result.Payload, `"`, `\"`),
 				result.EvasionTechnique,
 				result.RequestPart,
