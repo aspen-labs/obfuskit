@@ -659,8 +659,6 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 	bodyContent := fmt.Sprintf("param=%s", payload)
 	req.SetBodyString(bodyContent)
 
-	// Try to set multiple content-length headers with different values
-	// Note: fasthttp might normalize this
 	req.Header.Set("Content-Length", fmt.Sprintf("%d", len(bodyContent)))
 	req.Header.Add("Content-Length", fmt.Sprintf("%d", len(bodyContent)+10))
 

@@ -19,6 +19,7 @@ func main() {
 	fmt.Println("Chosen payload:", finalSelection.SelectedPayload)
 	fmt.Println("Chosen target:", finalSelection.SelectedTarget)
 	fmt.Println("Chosen report type:", finalSelection.SelectedReportType)
+	fmt.Println("Chosen URL: ", finalSelection.URL)
 
 	// results, err := request.RunTests(
 	// 	request.WithTargetURL("http://3txqcwxqw466fnzzw1wh10yyhpngb7zw.oastify.com"),
