@@ -3,14 +3,14 @@ package path
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/cmd"
+	"obfuskit/constants"
 	"obfuskit/evasions"
 	"strings"
 )
 
 // PathTraversalVariants generates various path traversal evasion techniques
 // based on the specified obfuscation level
-func PathTraversalVariants(path string, level cmd.Level) []string {
+func PathTraversalVariants(path string, level constants.Level) []string {
 	var variants []string
 
 	// Basic evasion techniques
@@ -31,7 +31,7 @@ func PathTraversalVariants(path string, level cmd.Level) []string {
 	variants = append(variants, nullByteInjection(path)...)
 
 	// Return basic variants if level is Basic
-	if level == cmd.Basic {
+	if level == constants.Basic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -56,7 +56,7 @@ func PathTraversalVariants(path string, level cmd.Level) []string {
 	)
 
 	// Return medium variants if level is Medium
-	if level == cmd.Medium {
+	if level == constants.Medium {
 		return evasions.UniqueStrings(variants)
 	}
 

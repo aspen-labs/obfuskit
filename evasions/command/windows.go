@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/cmd"
+	"obfuskit/constants"
 	"obfuskit/evasions"
 	"regexp"
 	"strings"
@@ -11,7 +11,7 @@ import (
 
 // WindowsCmdVariants generates various Windows command evasion techniques
 // based on the specified obfuscation level
-func WindowsCmdVariants(payload string, level cmd.Level) []string {
+func WindowsCmdVariants(payload string, level constants.Level) []string {
 	var variants []string
 
 	// Basic evasion techniques
@@ -31,7 +31,7 @@ func WindowsCmdVariants(payload string, level cmd.Level) []string {
 	)
 
 	// Return basic variants if level is Basic
-	if level == cmd.Basic {
+	if level == constants.Basic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -44,13 +44,13 @@ func WindowsCmdVariants(payload string, level cmd.Level) []string {
 		multiLevelQuoting(payload),      // Nested quoting
 		combinedEvasions(payload),       // Combining multiple techniques
 		callWrapping(payload),           // CALL command wrapping
-		cmdFlags(payload),               // Cmd.exe flags like /v:on /c
+		cmdFlags(payload),               // constants.exe flags like /v:on /c
 		substitutionTechniques(payload), // Multiple substitution techniques
 		comSpecEvasion(payload),         // %COMSPEC% variations
 	)
 
 	// Return medium variants if level is Medium
-	if level == cmd.Medium {
+	if level == constants.Medium {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -290,7 +290,7 @@ func forCommands(payload string) string {
 }
 
 func multiLevelQuoting(payload string) string {
-	return "cmd.exe /V:ON /C \"set cmd=\"" + payload + "\" && !cmd!\""
+	return "constants.exe /V:ON /C \"set cmd=\"" + payload + "\" && !cmd!\""
 }
 
 func combinedEvasions(payload string) string {
@@ -309,7 +309,7 @@ func cmdFlags(payload string) string {
 	flags := []string{"/c", "/v:on /c", "/r /c", "/v:on /r /c", "/q /c"}
 	flag := flags[rand.Intn(len(flags))]
 
-	return "cmd.exe " + flag + " " + quoteEvasion(payload)
+	return "constants.exe " + flag + " " + quoteEvasion(payload)
 }
 
 func substitutionTechniques(payload string) string {
@@ -352,8 +352,8 @@ func substitutionTechniques(payload string) string {
 func comSpecEvasion(payload string) string {
 	comspecVariations := []string{
 		"%COMSPEC%",
-		"%SYSTEMROOT%\\system32\\cmd.exe",
-		"%WINDIR%\\system32\\cmd.exe",
+		"%SYSTEMROOT%\\system32\\constants.exe",
+		"%WINDIR%\\system32\\constants.exe",
 	}
 
 	comspec := comspecVariations[rand.Intn(len(comspecVariations))]
@@ -382,7 +382,7 @@ func multiStageExecution(payload string) string {
 	}
 
 	// Create a multi-stage execution with temporary variables
-	return "cmd.exe /V:ON /C \"set p=" + parts[0] + " && " +
+	return "constants.exe /V:ON /C \"set p=" + parts[0] + " && " +
 		"set a=" + strings.Join(parts[1:], " ") + " && " +
 		"!p! !a!\""
 }
@@ -487,9 +487,9 @@ func charCodeEvasion(payload string) string {
 
 func batchFileAlternatives(payload string) string {
 	alternatives := []string{
-		"cmd.exe /k " + payload + " & exit",
-		"cmd.exe /c start /b " + payload,
-		"cmd.exe /c start \"\" /b " + payload,
+		"constants.exe /k " + payload + " & exit",
+		"constants.exe /c start /b " + payload,
+		"constants.exe /c start \"\" /b " + payload,
 		"wmic process call create \"" + payload + "\"",
 	}
 

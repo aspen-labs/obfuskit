@@ -3,12 +3,12 @@ package encoders
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/cmd"
+	"obfuskit/constants"
 	"obfuskit/evasions"
 	"strings"
 )
 
-func HTMLVariants(payload string, level cmd.Level) []string {
+func HTMLVariants(payload string, level constants.Level) []string {
 	var variants []string
 
 	htmlDecimalEntities := toHTMLDecimalEntities(payload)
@@ -25,7 +25,7 @@ func HTMLVariants(payload string, level cmd.Level) []string {
 		mixedEntities(payload), // Mixed named and numeric entities
 	)
 
-	if level == cmd.Basic {
+	if level == constants.Basic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -40,7 +40,7 @@ func HTMLVariants(payload string, level cmd.Level) []string {
 		attributeEncodingVariants(payload), // Attribute encoding variants
 	)
 
-	if level == cmd.Medium {
+	if level == constants.Medium {
 		return evasions.UniqueStrings(variants)
 	}
 

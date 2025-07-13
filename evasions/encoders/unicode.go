@@ -3,7 +3,7 @@ package encoders
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/cmd"
+	"obfuskit/constants"
 	"obfuskit/evasions"
 	"strings"
 	"unicode"
@@ -11,7 +11,7 @@ import (
 
 // UnicodeVariants generates various unicode encoded variants of the input payload
 // based on the specified obfuscation level
-func UnicodeVariants(payload string, level cmd.Level) []string {
+func UnicodeVariants(payload string, level constants.Level) []string {
 	var variants []string
 
 	// Define string builders for different unicode encoding styles
@@ -56,7 +56,7 @@ func UnicodeVariants(payload string, level cmd.Level) []string {
 	)
 
 	// Return basic variants if level is Basic
-	if level == cmd.Basic {
+	if level == constants.Basic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -94,7 +94,7 @@ func UnicodeVariants(payload string, level cmd.Level) []string {
 	)
 
 	// Return medium variants if level is Medium
-	if level == cmd.Medium {
+	if level == constants.Medium {
 		return evasions.UniqueStrings(variants)
 	}
 

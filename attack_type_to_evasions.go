@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"sort"
 
-	"obfuskit/cmd"
+	"obfuskit/constants"
 	"obfuskit/evasions/command"
 	"obfuskit/evasions/encoders"
 	"obfuskit/evasions/path"
 )
 
-var EvasionFunctions = map[string]func(string, cmd.Level) []string{
+var EvasionFunctions = map[string]func(string, constants.Level) []string{
 	"Base64Variants":  encoders.Base64Variants,
 	"BestFitVariants": encoders.BestFitVariants,
 	"HexVariants":     encoders.HexVariants,
@@ -139,7 +139,7 @@ func IsEvasionApplicable(payloadType, evasionType string) bool {
 	return false
 }
 
-func ApplyEvasion(payload, evasionType string, level cmd.Level) ([]string, error) {
+func ApplyEvasion(payload, evasionType string, level constants.Level) ([]string, error) {
 	if payload == "" {
 		return nil, nil
 	}
@@ -158,7 +158,7 @@ func ApplyEvasion(payload, evasionType string, level cmd.Level) ([]string, error
 	return evasionFunc(payload, level), nil
 }
 
-func ApplyEvasionsToPayload(payload, payloadType string, level cmd.Level) map[string][]string {
+func ApplyEvasionsToPayload(payload, payloadType string, level constants.Level) map[string][]string {
 	if payload == "" || payloadType == "" {
 		return nil
 	}
@@ -231,7 +231,7 @@ func main() {
 		IsEvasionApplicable("sqli", "Base64Variants"))
 
 	exampleSqliPayload := "; 1 == 1"
-	level := cmd.Medium
+	level := constants.Medium
 
 	fmt.Printf("\nOriginal payload: %s\n", exampleSqliPayload)
 	fmt.Printf("Applying evasions at level %s:\n", level)
@@ -245,14 +245,14 @@ func main() {
 	}
 
 	testPayload := "<script>alert('xss')</script>"
-	variants, err := ApplyEvasion(testPayload, "HTMLVariants", cmd.Advanced)
+	variants, err := ApplyEvasion(testPayload, "HTMLVariants", constants.Advanced)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
 	fmt.Printf("\nOriginal: %s\n", testPayload)
-	fmt.Printf("HTML variants (level %s):\n", cmd.Advanced)
+	fmt.Printf("HTML variants (level %s):\n", constants.Advanced)
 	for i, variant := range variants {
 		fmt.Printf("%d: %s\n", i+1, variant)
 	}

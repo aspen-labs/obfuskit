@@ -3,26 +3,25 @@ package encoders
 // BestFitsVariants generates various best fit encoded variants of the input payload
 import (
 	"fmt"
+	"obfuskit/constants"
 	"strings"
 	"unicode/utf8"
-
-	"obfuskit/cmd"
 )
 
 // BestFitVariants generates payloads using best-fit character mappings
 // These mappings exploit character normalization and font rendering differences
-func BestFitVariants(payload string, level cmd.Level) []string {
+func BestFitVariants(payload string, level constants.Level) []string {
 	var variants []string
 
 	switch level {
-	case cmd.Basic:
+	case constants.Basic:
 		// Basic best-fit mappings
 		variants = append(variants, basicBestFit(payload)...)
-	case cmd.Medium:
+	case constants.Medium:
 		// Add more sophisticated mappings
 		variants = append(variants, basicBestFit(payload)...)
 		variants = append(variants, advancedBestFit(payload)...)
-	case cmd.Advanced:
+	case constants.Advanced:
 		// Full spectrum of best-fit evasions
 		variants = append(variants, basicBestFit(payload)...)
 		variants = append(variants, advancedBestFit(payload)...)
@@ -523,7 +522,7 @@ func limitVariants(variants []string, maxCount int) []string {
 
 // GenerateAllVariants is a convenience function that generates all possible variants
 // with proper validation and deduplication
-func GenerateAllVariants(payload string, level cmd.Level, maxVariants int) []string {
+func GenerateAllVariants(payload string, level constants.Level, maxVariants int) []string {
 	if payload == "" {
 		return []string{}
 	}
@@ -546,7 +545,7 @@ func GenerateAllVariants(payload string, level cmd.Level, maxVariants int) []str
 }
 
 // PrintVariants is a utility function for debugging/testing
-func PrintVariants(payload string, level cmd.Level, maxVariants int) {
+func PrintVariants(payload string, level constants.Level, maxVariants int) {
 	variants := GenerateAllVariants(payload, level, maxVariants)
 
 	fmt.Printf("Original payload: %s\n", payload)
@@ -559,20 +558,20 @@ func PrintVariants(payload string, level cmd.Level, maxVariants int) {
 }
 
 // GetVariantStats returns statistics about the generated variants
-func GetVariantStats(payload string, level cmd.Level) map[string]int {
+func GetVariantStats(payload string, level constants.Level) map[string]int {
 	stats := make(map[string]int)
 
 	// Count variants by type
 	switch level {
-	case cmd.Basic:
+	case constants.Basic:
 		basic := basicBestFit(payload)
 		stats["basic"] = len(deduplicateVariants(basic))
-	case cmd.Medium:
+	case constants.Medium:
 		basic := basicBestFit(payload)
 		advanced := advancedBestFit(payload)
 		stats["basic"] = len(deduplicateVariants(basic))
 		stats["advanced"] = len(deduplicateVariants(advanced))
-	case cmd.Advanced:
+	case constants.Advanced:
 		basic := basicBestFit(payload)
 		advanced := advancedBestFit(payload)
 		expert := expertBestFit(payload)

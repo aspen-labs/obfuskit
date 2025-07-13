@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/cmd"
+	"obfuskit/constants"
 	"obfuskit/evasions"
 	"strings"
 	"time"
@@ -11,7 +11,7 @@ import (
 
 // UnixCmdVariants generates various Unix/Linux command evasion techniques
 // based on the specified obfuscation level
-func UnixCmdVariants(payload string, level cmd.Level) []string {
+func UnixCmdVariants(payload string, level constants.Level) []string {
 	var variants []string
 
 	// Basic evasion techniques
@@ -27,7 +27,7 @@ func UnixCmdVariants(payload string, level cmd.Level) []string {
 		randomizedCase(payload),        // Random capitalization where possible
 	)
 
-	if level == cmd.Basic {
+	if level == constants.Basic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -46,7 +46,7 @@ func UnixCmdVariants(payload string, level cmd.Level) []string {
 	variants = append(variants, hexEncoding(payload)...)
 
 	// Return medium variants if level is Medium
-	if level == cmd.Medium {
+	if level == constants.Medium {
 		return evasions.UniqueStrings(variants)
 	}
 

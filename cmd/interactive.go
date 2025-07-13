@@ -3,14 +3,242 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
+
+	"obfuskit/constants"
+	"obfuskit/evasions/command"
+	"obfuskit/evasions/encoders"
+	"obfuskit/evasions/path"
 )
 
+// Evasion function map with wrapper functions to match signatures
+var EvasionFunctions = map[string]func(string, constants.Level) []string{
+	"Base64Variants": func(payload string, level constants.Level) []string {
+		return encoders.Base64Variants(payload, level)
+	},
+	"BestFitVariants": func(payload string, level constants.Level) []string {
+		return encoders.BestFitVariants(payload, level)
+	},
+	"HexVariants": func(payload string, level constants.Level) []string {
+		return encoders.HexVariants(payload, level)
+	},
+	"HTMLVariants": func(payload string, level constants.Level) []string {
+		return encoders.HTMLVariants(payload, level)
+	},
+	"OctalVariants": func(payload string, level constants.Level) []string {
+		return encoders.OctalVariants(payload, level)
+	},
+	"UnicodeVariants": func(payload string, level constants.Level) []string {
+		return encoders.UnicodeVariants(payload, level)
+	},
+	"UnixCmdVariants": func(payload string, level constants.Level) []string {
+		return command.UnixCmdVariants(payload, level)
+	},
+	"WindowsCmdVariants": func(payload string, level constants.Level) []string {
+		return command.WindowsCmdVariants(payload, level)
+	},
+	"PathTraversalVariants": func(payload string, level constants.Level) []string {
+		return path.PathTraversalVariants(payload, level)
+	},
+}
+
+// Payload to evasion mapping
+var PayloadEvasionMap = map[string][]string{
+	"xss": {
+		"HTMLVariants",
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+		"XSSVariants",
+	},
+	"sqli": {
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+	},
+	"unixcmdi": {
+		"UnixCmdVariants",
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+		"PathTraversalVariants",
+	},
+	"wincmdi": {
+		"WindowsCmdVariants",
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+		"PathTraversalVariants",
+	},
+	"path": {
+		"PathTraversalVariants",
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+	},
+	"fileaccess": {
+		"PathTraversalVariants",
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+	},
+	"ldapi": {
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+	},
+}
+
+// Evasion categories
+var EvasionCategories = map[string]string{
+	"HTMLVariants":          "encoder",
+	"UnicodeVariants":       "encoder",
+	"HexVariants":           "encoder",
+	"OctalVariants":         "encoder",
+	"Base64Variants":        "encoder",
+	"BestFitVariants":       "encoder",
+	"UnixCmdVariants":       "command",
+	"WindowsCmdVariants":    "command",
+	"PathTraversalVariants": "path",
+	"XSSVariants":           "xss",
+}
+
+// Evasion utility functions
+func GetEvasionsForPayload(payloadType string) ([]string, bool) {
+	evasions, exists := PayloadEvasionMap[payloadType]
+	return evasions, exists
+}
+
+func GetEvasionsByCategory(payloadType string) map[string][]string {
+	evasions, exists := PayloadEvasionMap[payloadType]
+	if !exists {
+		return nil
+	}
+
+	categorized := make(map[string][]string)
+	for _, evasion := range evasions {
+		category := EvasionCategories[evasion]
+		categorized[category] = append(categorized[category], evasion)
+	}
+
+	return categorized
+}
+
+func IsEvasionApplicable(payloadType, evasionType string) bool {
+	evasions, exists := PayloadEvasionMap[payloadType]
+	if !exists {
+		return false
+	}
+
+	for _, evasion := range evasions {
+		if evasion == evasionType {
+			return true
+		}
+	}
+	return false
+}
+
+func ApplyEvasion(payload, evasionType string, level constants.Level) ([]string, error) {
+	if payload == "" {
+		return nil, nil
+	}
+
+	evasionFunc, exists := EvasionFunctions[evasionType]
+	if !exists {
+		return nil, fmt.Errorf("evasion function %q not found", evasionType)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Recovered from panic in %s: %v\n", evasionType, r)
+		}
+	}()
+
+	return evasionFunc(payload, level), nil
+}
+
+func ApplyEvasionsToPayload(payload, payloadType string, level constants.Level) map[string][]string {
+	if payload == "" || payloadType == "" {
+		return nil
+	}
+
+	evasions, exists := GetEvasionsForPayload(payloadType)
+	if !exists {
+		return nil
+	}
+
+	results := make(map[string][]string, len(evasions))
+	for _, evasionType := range evasions {
+		variants, err := ApplyEvasion(payload, evasionType, level)
+		if err != nil {
+			results[evasionType] = []string{fmt.Sprintf("Error: %v", err)}
+			continue
+		}
+		if len(variants) > 0 {
+			results[evasionType] = variants
+		}
+	}
+
+	return results
+}
+
+func GetAllPayloadTypes() []string {
+	types := make([]string, 0, len(PayloadEvasionMap))
+	for payloadType := range PayloadEvasionMap {
+		types = append(types, payloadType)
+	}
+	sort.Strings(types)
+	return types
+}
+
+func PrintPayloadEvasionMap() {
+	payloadTypes := GetAllPayloadTypes()
+
+	fmt.Println("Payload to Evasions Mapping:")
+	fmt.Println("============================")
+
+	for _, payloadType := range payloadTypes {
+		fmt.Printf("\n%s:\n", payloadType)
+		categorized := GetEvasionsByCategory(payloadType)
+
+		categories := make([]string, 0, len(categorized))
+		for category := range categorized {
+			categories = append(categories, category)
+		}
+		sort.Strings(categories)
+
+		for _, category := range categories {
+			evasions := categorized[category]
+			sort.Strings(evasions)
+			fmt.Printf("  %s:\n", category)
+			for _, evasion := range evasions {
+				fmt.Printf("    - %s\n", evasion)
+			}
+		}
+	}
+}
+
+// UI Types and structures
 type item struct {
 	title, desc string
 }
@@ -551,7 +779,6 @@ func displayFinalConfiguration(m model) {
 		fmt.Printf("Target         : %s (%s)\n", m.SelectedTarget, m.URL)
 		fmt.Printf("Report Type    : %s %s\n", m.SelectedReportType, autoString(m.autoReport))
 		fmt.Println(strings.Repeat("=", 50))
-
 	}
 }
 
@@ -594,7 +821,6 @@ func GetFinalSelection() model {
 	return FinalSelection
 }
 
-// ValidationError represents a validation error
 type ValidationError struct {
 	Field   string
 	Message string

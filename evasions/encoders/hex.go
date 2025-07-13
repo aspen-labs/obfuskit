@@ -3,7 +3,7 @@ package encoders
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/cmd"
+	"obfuskit/constants"
 	"obfuskit/evasions"
 	"regexp"
 	"strings"
@@ -11,7 +11,7 @@ import (
 
 // HexVariants generates various hex encoded variants of the input payload
 // based on the specified obfuscation level
-func HexVariants(payload string, level cmd.Level) []string {
+func HexVariants(payload string, level constants.Level) []string {
 	var variants []string
 
 	// Basic hex encodings
@@ -39,7 +39,7 @@ func HexVariants(payload string, level cmd.Level) []string {
 	)
 
 	// Return basic variants if level is Basic
-	if level == cmd.Basic {
+	if level == constants.Basic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -52,7 +52,7 @@ func HexVariants(payload string, level cmd.Level) []string {
 	)
 
 	// Return medium variants if level is Medium
-	if level == cmd.Medium {
+	if level == constants.Medium {
 		return evasions.UniqueStrings(variants)
 	}
 
