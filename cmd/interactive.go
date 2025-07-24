@@ -313,6 +313,7 @@ var (
 		item{"Pretty Terminal", "Generate a formatted report in the terminal"},
 		item{"PDF", "Generate a PDF document report"},
 		item{"CSV", "Generate data in CSV format"},
+		item{"Nuclei Templates", "Generate nuclei YAML templates for automated scanning"},
 	}
 )
 

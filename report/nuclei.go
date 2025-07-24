@@ -11,9 +11,10 @@ import (
 
 // NucleiTemplate represents a nuclei template structure
 type NucleiTemplate struct {
-	ID       string            `yaml:"id"`
-	Info     NucleiInfo        `yaml:"info"`
-	Requests []NucleiRequest   `yaml:"requests"`
+	ID       string                 `yaml:"id"`
+	Info     NucleiInfo             `yaml:"info"`
+	Payloads map[string][]string   `yaml:"payloads,omitempty"`
+	Requests []NucleiRequest       `yaml:"requests"`
 }
 
 type NucleiInfo struct {
@@ -271,6 +272,21 @@ func generateYAMLContent(template NucleiTemplate) string {
 	}
 	builder.WriteString("\n")
 
+	// Payloads section
+	if len(template.Payloads) > 0 {
+		builder.WriteString("payloads:\n")
+		for key, payloads := range template.Payloads {
+			builder.WriteString(fmt.Sprintf("  %s:\n", key))
+			for _, payload := range payloads {
+				// Escape quotes and special characters in payloads
+				escapedPayload := strings.ReplaceAll(payload, "\"", "\\\"")
+				escapedPayload = strings.ReplaceAll(escapedPayload, "\n", "\\n")
+				builder.WriteString(fmt.Sprintf("    - \"%s\"\n", escapedPayload))
+			}
+		}
+		builder.WriteString("\n")
+	}
+
 	// Requests section
 	builder.WriteString("requests:\n")
 	for _, req := range template.Requests {
@@ -415,6 +431,11 @@ func generateTemplateGroupsFromPayloads(payloadResults []PayloadResult) []Nuclei
 			allPayloads = append(allPayloads, result.Variants...)
 		}
 
+		// Add payloads section
+		template.Payloads = map[string][]string{
+			"payload": allPayloads,
+		}
+
 		// Create requests for different injection points
 		requests := generateRequestsForPayloads(allPayloads, first.AttackType)
 		template.Requests = requests
@@ -514,6 +535,17 @@ func generateMasterTemplateFromPayloads(payloadResults []PayloadResult) NucleiTe
 			Description: "Comprehensive WAF bypass test using generated payloads with multiple evasion techniques",
 			Tags:        []string{"waf", "bypass", "comprehensive", "payloads"},
 		},
+	}
+
+	// Collect all payloads from all results
+	var allPayloads []string
+	for _, result := range payloadResults {
+		allPayloads = append(allPayloads, result.Variants...)
+	}
+
+	// Add payloads section
+	template.Payloads = map[string][]string{
+		"payload": allPayloads,
 	}
 
 	// Create requests for all common injection points

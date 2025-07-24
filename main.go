@@ -179,6 +179,13 @@ func handleGeneratePayloads(results *TestResults, level constants.Level) error {
 		fmt.Println("  - payloads_simple.txt (one payload per line)")
 	}
 
+	// Generate nuclei templates from payloads
+	if err := generateNucleiTemplatesFromPayloads(results, level); err != nil {
+		fmt.Printf("Warning: Failed to generate nuclei templates: %v\n", err)
+	} else {
+		fmt.Println("✅ Nuclei templates generated in nuclei_templates/ directory")
+	}
+
 	return nil
 }
 
@@ -474,7 +481,7 @@ func generateReports(results *TestResults) error {
 
 	reportTypes := []string{}
 	if results.Config.SelectedReportType == "All" {
-		reportTypes = []string{"HTML", "Pretty Terminal", "PDF"}
+		reportTypes = []string{"HTML", "Pretty Terminal", "PDF", "Nuclei Templates"}
 	} else {
 		reportTypes = []string{results.Config.SelectedReportType}
 	}
@@ -505,10 +512,35 @@ func generateReports(results *TestResults) error {
 			} else {
 				fmt.Println("✅ CSV report generated: waf_test_report.csv")
 			}
+		case "Nuclei Templates":
+			err := report.GenerateNucleiTemplates(results.RequestResults, "nuclei_templates")
+			if err != nil {
+				fmt.Printf("Warning: Failed to generate nuclei templates: %v\n", err)
+			} else {
+				fmt.Println("✅ Nuclei templates generated in nuclei_templates/ directory")
+			}
 		}
 	}
 
 	return nil
+}
+
+// generateNucleiTemplatesFromPayloads converts payload results to nuclei templates
+func generateNucleiTemplatesFromPayloads(results *TestResults, level constants.Level) error {
+	// Convert TestResults.PayloadResults to report.PayloadResult format
+	var payloadResults []report.PayloadResult
+	for _, payloadResult := range results.PayloadResults {
+		payloadResults = append(payloadResults, report.PayloadResult{
+			OriginalPayload: payloadResult.OriginalPayload,
+			AttackType:      payloadResult.AttackType,
+			EvasionType:     payloadResult.EvasionType,
+			Variants:        payloadResult.Variants,
+			Level:           string(level),
+		})
+	}
+
+	// Generate nuclei templates
+	return report.GenerateNucleiTemplatesFromPayloads(payloadResults, "nuclei_templates")
 }
 
 func generateCSVReport(results *TestResults) error {
