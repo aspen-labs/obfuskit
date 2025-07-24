@@ -55,7 +55,7 @@ var PayloadEvasionMap = map[string][]string{
 		"OctalVariants",
 		"Base64Variants",
 		"BestFitVariants",
-		"XSSVariants",
+		// "XSSVariants",
 	},
 	"sqli": {
 		"UnicodeVariants",
@@ -520,9 +520,10 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 			m.SelectedPayload = "All"
 			// Set default payload source when auto-selecting
 			m.SelectedPayloadSource = "Generated"
-			m.list.SetItems(targetItems)
-			m.list.Title = "Choose target method:"
-			m.current = stateChooseTarget
+			// Always go through evasion level selection
+			m.list.SetItems(evasionLevelItems)
+			m.list.Title = "Choose evasion level:"
+			m.current = stateChooseEvasionLevel
 		}
 
 	case stateChooseSpecificPayload:
@@ -549,9 +550,17 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 
 	case stateChooseEvasionLevel:
 		m.SelectedEvasionLevel = m.list.SelectedItem().(item).title
-		m.list.SetItems(payloadSourceItems)
-		m.list.Title = "How do you want to provide payloads?"
-		m.current = stateChoosePayloadSource
+		if m.autoPayload {
+			// In auto payload mode, go directly to target selection
+			m.list.SetItems(targetItems)
+			m.list.Title = "Choose target method:"
+			m.current = stateChooseTarget
+		} else {
+			// In manual payload mode, go to payload source selection
+			m.list.SetItems(payloadSourceItems)
+			m.list.Title = "How do you want to provide payloads?"
+			m.current = stateChoosePayloadSource
+		}
 
 	case stateChoosePayloadSource:
 		selected := m.list.SelectedItem().(item).title

@@ -43,7 +43,6 @@ type TestSummary struct {
 
 func main() {
 	// Define command line flags
-	levelFlag := flag.String("level", "medium", "Evasion level: basic, medium, or advanced")
 	helpFlag := flag.Bool("help", false, "Show help information")
 	flag.Parse()
 
@@ -53,18 +52,14 @@ func main() {
 		return
 	}
 
-	// Parse evasion level from command line (will be overridden by interactive selection if provided)
-	defaultEvasionLevel := parseEvasionLevel(*levelFlag)
-
 	fmt.Println("=== WAF Efficacy Testing Tool ===")
-	fmt.Printf("Default Evasion Level: %s\n", defaultEvasionLevel)
 	fmt.Println("Initializing interactive configuration...")
 
 	// Get user configuration through interactive UI
 	finalSelection := cmd.GetFinalSelection()
 
-	// Use interactive evasion level if provided, otherwise use command line default
-	evasionLevel := defaultEvasionLevel
+	// Use evasion level from interactive selection (default to Medium if not set)
+	evasionLevel := constants.Medium
 	if finalSelection.SelectedEvasionLevel != "" {
 		evasionLevel = parseEvasionLevel(finalSelection.SelectedEvasionLevel)
 	}
@@ -126,18 +121,17 @@ func showHelp() {
 	fmt.Println("  obfuskit [flags]")
 	fmt.Println("")
 	fmt.Println("Flags:")
-	fmt.Println("  -level string    Evasion level: basic, medium, or advanced (default: medium)")
 	fmt.Println("  -help           Show this help information")
 	fmt.Println("")
-	fmt.Println("Evasion Levels:")
-	fmt.Println("  basic      - Uses simple evasion techniques (fastest)")
-	fmt.Println("  medium     - Uses moderate evasion techniques (balanced)")
-	fmt.Println("  advanced   - Uses all available evasion techniques (comprehensive)")
+	fmt.Println("Features:")
+	fmt.Println("  • Interactive menu-driven interface")
+	fmt.Println("  • Multiple evasion levels (Basic, Medium, Advanced)")
+	fmt.Println("  • Support for various attack types (XSS, SQLi, Command Injection, etc.)")
+	fmt.Println("  • Multiple encoding options")
+	fmt.Println("  • Payload generation and testing capabilities")
 	fmt.Println("")
-	fmt.Println("Examples:")
-	fmt.Println("  obfuskit                    # Run with medium evasion level")
-	fmt.Println("  obfuskit -level basic       # Run with basic evasion level")
-	fmt.Println("  obfuskit -level advanced    # Run with advanced evasion level")
+	fmt.Println("Example:")
+	fmt.Println("  obfuskit                    # Run the interactive WAF testing tool")
 }
 
 // parseEvasionLevel converts string level to constants.Level
