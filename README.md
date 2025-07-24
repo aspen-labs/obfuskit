@@ -1,6 +1,13 @@
 # ObfusKit
 
 ObfusKit is a flexible CLI toolkit designed to test WAF efficacy and application resilience against evasion techniques and obfuscated payloads. Whether you're testing URL paths, command strings, or encoding mechanisms, ObfusKit provides varying levels of obfuscation to simulate real-world attack variants.
+To run, do the following:
+
+```
+ go build -o obfuskit .
+ ./obfuskit
+```
+
 
 ## Features
 Three Levels of Obfuscation/Evasion:

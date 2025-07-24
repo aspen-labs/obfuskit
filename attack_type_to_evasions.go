@@ -33,7 +33,7 @@ var PayloadEvasionMap = map[string][]string{
 		"Base64Variants",
 		// "EscapingVariants",
 		"BestFitVariants",
-		"XSSVariants",
+		// "XSSVariants",
 	},
 	"sqli": {
 		"UnicodeVariants",
@@ -102,7 +102,7 @@ var EvasionCategories = map[string]string{
 	"UnixCmdVariants":       "command",
 	"WindowsCmdVariants":    "command",
 	"PathTraversalVariants": "path",
-	"XSSVariants":           "xss",
+	// "XSSVariants":           "xss",
 }
 
 func GetEvasionsForPayload(payloadType string) ([]string, bool) {

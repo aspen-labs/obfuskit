@@ -55,7 +55,7 @@ var PayloadEvasionMap = map[string][]string{
 		"OctalVariants",
 		"Base64Variants",
 		"BestFitVariants",
-		// "XSSVariants",
+		"XSSVariants",
 	},
 	"sqli": {
 		"UnicodeVariants",
@@ -287,6 +287,12 @@ var (
 		item{"UTF-8", "Use UTF-8 byte sequences"},
 	}
 
+	evasionLevelItems = []list.Item{
+		item{"Basic", "Use simple evasion techniques (fastest, fewer variants)"},
+		item{"Medium", "Use moderate evasion techniques (balanced approach)"},
+		item{"Advanced", "Use all available evasion techniques (comprehensive, more variants)"},
+	}
+
 	payloadSourceItems = []list.Item{
 		item{"From File", "Load payloads from a text file"},
 		item{"Enter Manually", "Enter payloads manually in the terminal"},
@@ -320,6 +326,7 @@ const (
 	stateChoosePayloadMethod
 	stateChooseSpecificPayload
 	stateChooseEncoding
+	stateChooseEvasionLevel
 	stateChoosePayloadSource
 	stateEnterFilePath
 	stateEnterPayloads
@@ -339,6 +346,7 @@ type Model struct {
 	SelectedAttack        string
 	SelectedPayload       string
 	SelectedEncoding      string
+	SelectedEvasionLevel  string
 	SelectedPayloadSource string
 	CustomPayloads        []string
 	PayloadFilePath       string
@@ -527,14 +535,20 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 			m.list.Title = "Choose encoding method:"
 			m.current = stateChooseEncoding
 		} else {
-			// For other payload types, go directly to payload source selection
-			m.list.SetItems(payloadSourceItems)
-			m.list.Title = "How do you want to provide payloads?"
-			m.current = stateChoosePayloadSource
+			// For other payload types, go to evasion level selection
+			m.list.SetItems(evasionLevelItems)
+			m.list.Title = "Choose evasion level:"
+			m.current = stateChooseEvasionLevel
 		}
 
 	case stateChooseEncoding:
 		m.SelectedEncoding = m.list.SelectedItem().(item).title
+		m.list.SetItems(evasionLevelItems)
+		m.list.Title = "Choose evasion level:"
+		m.current = stateChooseEvasionLevel
+
+	case stateChooseEvasionLevel:
+		m.SelectedEvasionLevel = m.list.SelectedItem().(item).title
 		m.list.SetItems(payloadSourceItems)
 		m.list.Title = "How do you want to provide payloads?"
 		m.current = stateChoosePayloadSource
@@ -686,6 +700,10 @@ Evasion Method : %s %s`,
 			summary += fmt.Sprintf("\nEncoding       : %s", m.SelectedEncoding)
 		}
 
+		if m.SelectedEvasionLevel != "" {
+			summary += fmt.Sprintf("\nEvasion Level  : %s", m.SelectedEvasionLevel)
+		}
+
 		if m.SelectedPayloadSource != "" {
 			summary += fmt.Sprintf("\nPayload Source : %s", m.SelectedPayloadSource)
 			if m.SelectedPayloadSource == "From File" && m.PayloadFilePath != "" {
@@ -753,6 +771,10 @@ func displayFinalConfiguration(m Model) {
 
 		if m.SelectedEncoding != "" {
 			fmt.Printf("Encoding       : %s\n", m.SelectedEncoding)
+		}
+
+		if m.SelectedEvasionLevel != "" {
+			fmt.Printf("Evasion Level  : %s\n", m.SelectedEvasionLevel)
 		}
 
 		if m.SelectedPayloadSource != "" {

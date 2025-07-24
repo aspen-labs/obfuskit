@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -41,11 +42,32 @@ type TestSummary struct {
 }
 
 func main() {
+	// Define command line flags
+	levelFlag := flag.String("level", "medium", "Evasion level: basic, medium, or advanced")
+	helpFlag := flag.Bool("help", false, "Show help information")
+	flag.Parse()
+
+	// Show help if requested
+	if *helpFlag {
+		showHelp()
+		return
+	}
+
+	// Parse evasion level from command line (will be overridden by interactive selection if provided)
+	defaultEvasionLevel := parseEvasionLevel(*levelFlag)
+
 	fmt.Println("=== WAF Efficacy Testing Tool ===")
+	fmt.Printf("Default Evasion Level: %s\n", defaultEvasionLevel)
 	fmt.Println("Initializing interactive configuration...")
 
 	// Get user configuration through interactive UI
 	finalSelection := cmd.GetFinalSelection()
+
+	// Use interactive evasion level if provided, otherwise use command line default
+	evasionLevel := defaultEvasionLevel
+	if finalSelection.SelectedEvasionLevel != "" {
+		evasionLevel = parseEvasionLevel(finalSelection.SelectedEvasionLevel)
+	}
 
 	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("CONFIGURATION SUMMARY")
@@ -53,6 +75,7 @@ func main() {
 	fmt.Printf("Action: %s\n", finalSelection.Selection)
 	fmt.Printf("Attack: %s\n", finalSelection.SelectedAttack)
 	fmt.Printf("Payload: %s\n", finalSelection.SelectedPayload)
+	fmt.Printf("Evasion Level: %s\n", evasionLevel)
 	fmt.Printf("Target: %s\n", finalSelection.SelectedTarget)
 	fmt.Printf("Report: %s\n", finalSelection.SelectedReportType)
 	fmt.Printf("URL: %s\n", finalSelection.URL)
@@ -66,11 +89,11 @@ func main() {
 	var err error
 	switch finalSelection.Selection {
 	case "Generate Payloads":
-		err = handleGeneratePayloads(testResults)
+		err = handleGeneratePayloads(testResults, evasionLevel)
 	case "Send to URL":
-		err = handleSendToURL(testResults)
+		err = handleSendToURL(testResults, evasionLevel)
 	case "Use Existing Payloads":
-		err = handleExistingPayloads(testResults)
+		err = handleExistingPayloads(testResults, evasionLevel)
 	default:
 		err = fmt.Errorf("unknown selection: %s", finalSelection.Selection)
 	}
@@ -82,16 +105,57 @@ func main() {
 	// Generate summary
 	generateSummary(testResults)
 
-	// Generate reports
-	err = generateReports(testResults)
-	if err != nil {
-		log.Fatalf("Error generating reports: %v", err)
+	// Generate reports only if we ran tests (not just generating payloads)
+	if finalSelection.Selection != "Generate Payloads" {
+		err = generateReports(testResults)
+		if err != nil {
+			log.Fatalf("Error generating reports: %v", err)
+		}
+	} else {
+		fmt.Println("\n📝 Skipping report generation (payloads generated only)")
 	}
 
 	fmt.Println("\n✅ WAF testing completed successfully!")
 }
 
-func handleGeneratePayloads(results *TestResults) error {
+// showHelp displays usage information
+func showHelp() {
+	fmt.Println("WAF Efficacy Testing Tool")
+	fmt.Println("")
+	fmt.Println("Usage:")
+	fmt.Println("  obfuskit [flags]")
+	fmt.Println("")
+	fmt.Println("Flags:")
+	fmt.Println("  -level string    Evasion level: basic, medium, or advanced (default: medium)")
+	fmt.Println("  -help           Show this help information")
+	fmt.Println("")
+	fmt.Println("Evasion Levels:")
+	fmt.Println("  basic      - Uses simple evasion techniques (fastest)")
+	fmt.Println("  medium     - Uses moderate evasion techniques (balanced)")
+	fmt.Println("  advanced   - Uses all available evasion techniques (comprehensive)")
+	fmt.Println("")
+	fmt.Println("Examples:")
+	fmt.Println("  obfuskit                    # Run with medium evasion level")
+	fmt.Println("  obfuskit -level basic       # Run with basic evasion level")
+	fmt.Println("  obfuskit -level advanced    # Run with advanced evasion level")
+}
+
+// parseEvasionLevel converts string level to constants.Level
+func parseEvasionLevel(level string) constants.Level {
+	switch strings.ToLower(level) {
+	case "basic":
+		return constants.Basic
+	case "medium":
+		return constants.Medium
+	case "advanced":
+		return constants.Advanced
+	default:
+		fmt.Printf("Warning: Unknown evasion level '%s', using 'medium' as default\n", level)
+		return constants.Medium
+	}
+}
+
+func handleGeneratePayloads(results *TestResults, level constants.Level) error {
 	fmt.Println("\n🔧 Generating payloads...")
 
 	// Load base payloads
@@ -103,7 +167,7 @@ func handleGeneratePayloads(results *TestResults) error {
 	// Generate variants for each base payload
 	for attackType, payloads := range basePayloads {
 		for _, payload := range payloads {
-			if err := generateVariantsForPayload(results, payload, attackType); err != nil {
+			if err := generateVariantsForPayload(results, payload, attackType, level); err != nil {
 				return err
 			}
 		}
@@ -124,11 +188,11 @@ func handleGeneratePayloads(results *TestResults) error {
 	return nil
 }
 
-func handleSendToURL(results *TestResults) error {
+func handleSendToURL(results *TestResults, level constants.Level) error {
 	fmt.Println("\n🌐 Generating payloads and sending to URL...")
 
 	// First generate the payloads
-	err := handleGeneratePayloads(results)
+	err := handleGeneratePayloads(results, level)
 	if err != nil {
 		return err
 	}
@@ -164,7 +228,7 @@ func handleSendToURL(results *TestResults) error {
 	return nil
 }
 
-func handleExistingPayloads(results *TestResults) error {
+func handleExistingPayloads(results *TestResults, level constants.Level) error {
 	fmt.Println("\n📁 Processing existing payloads...")
 
 	var payloads []string
@@ -186,7 +250,7 @@ func handleExistingPayloads(results *TestResults) error {
 	for _, payload := range payloads {
 		// Try to detect attack type or use a generic approach
 		attackType := detectAttackType(payload)
-		err := generateVariantsForPayload(results, payload, attackType)
+		err := generateVariantsForPayload(results, payload, attackType, level)
 		if err != nil {
 			fmt.Printf("Warning: Failed to generate variants for payload '%s': %v\n", payload, err)
 			continue
@@ -264,8 +328,7 @@ func loadPayloadsFromFile(filePath string) ([]string, error) {
 	return payloads, nil
 }
 
-func generateVariantsForPayload(results *TestResults, payload, attackType string) error {
-	level := constants.Medium // Default level, could be made configurable
+func generateVariantsForPayload(results *TestResults, payload, attackType string, level constants.Level) error {
 
 	// Get applicable evasions for this attack type
 	evasions, exists := cmd.GetEvasionsForPayload(attackType)
