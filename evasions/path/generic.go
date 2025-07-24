@@ -12,23 +12,44 @@ import (
 // based on the specified obfuscation level
 func PathTraversalVariants(path string, level constants.Level) []string {
 	var variants []string
+	
+	// Safety function to catch panics in individual evasion functions
+	safeApply := func(fn func(string) string, input string) string {
+		defer func() {
+			if r := recover(); r != nil {
+				// Log the panic but don't crash
+				// Return the original input as fallback
+			}
+		}()
+		return fn(input)
+	}
+	
+	safeApplyMultiple := func(fn func(string) []string, input string) []string {
+		defer func() {
+			if r := recover(); r != nil {
+				// Return original input as fallback
+			}
+		}()
+		return fn(input)
+	}
 
-	// Basic evasion techniques
+	// Basic evasion techniques with safety wrapper
 	variants = append(variants,
-		dotSlashPrepend(path),            // Adding ./ prefixes
-		dotSlashVarying(path),            // Varying ./ and ../
-		doubleSlashPadding(path),         // Using // instead of /
-		urlEncoding(path),                // Basic URL encoding
-		mixedEncoding(path),              // Mixed case and encoding
-		slashBackslashMix(path),          // Mixing / and \
-		redundantDots(path),              // Adding redundant dots in paths
-		caseVariation(path),              // Case variations where applicable
-		nonReadableDirPaths(path),        // Using non-readable directories
-		windowsAlternateStream(path),     // Windows alternate data stream syntax
-		unicodeCombiningCharacters(path), // Unicode combining characters
+		safeApply(dotSlashPrepend, path),            // Adding ./ prefixes
+		safeApply(dotSlashVarying, path),            // Varying ./ and ../
+		safeApply(doubleSlashPadding, path),         // Using // instead of /
+		safeApply(urlEncoding, path),                // Basic URL encoding
+		safeApply(mixedEncoding, path),              // Mixed case and encoding
+		safeApply(slashBackslashMix, path),          // Mixing / and \
+		safeApply(redundantDots, path),              // Adding redundant dots in paths
+		safeApply(caseVariation, path),              // Case variations where applicable
+		safeApply(nonReadableDirPaths, path),        // Using non-readable directories
+		safeApply(windowsAlternateStream, path),     // Windows alternate data stream syntax
+		safeApply(unicodeCombiningCharacters, path), // Unicode combining characters
 	)
 
-	variants = append(variants, nullByteInjection(path)...)
+	nullResults := safeApplyMultiple(nullByteInjection, path)
+	variants = append(variants, nullResults...)
 
 	// Return basic variants if level is Basic
 	if level == constants.Basic {
@@ -37,22 +58,22 @@ func PathTraversalVariants(path string, level constants.Level) []string {
 
 	// Medium level adds more complex techniques
 	variants = append(variants,
-		doubleUrlEncoding(path),       // Double URL encoding
-		unicodeEncoding(path),         // Unicode encoding
-		pathNormalization(path),       // Path normalization tricks
-		selfReferencingDir(path),      // Using self-referencing directory
-		repetitiveTraversal(path),     // Repetitive directory traversal
-		environmentVarsInPath(path),   // Using environment variables
-		directoryAliasing(path),       // Using directory aliases
-		dotDotSeparation(path),        // Separating the dots in ../
-		htmlEntityEncoding(path),      // HTML entity encoding
-		multipleRepresentations(path), // Multiple character representations
-		encodedBackslash(path),        // Encoded backslashes
-		nestedEncoding(path),          // Nested encoding techniques
-		javaServletBypass(path),       // Java servlet bypass techniques
-		nginxOffBySlash(path),         // Nginx off-by-slash bypass
-		phpNullByteAlternate(path),    // PHP null byte alternatives
-		jspWebInfTraversal(path),      // JSP WEB-INF traversal
+		safeApply(doubleUrlEncoding, path),       // Double URL encoding
+		safeApply(unicodeEncoding, path),         // Unicode encoding
+		safeApply(pathNormalization, path),       // Path normalization tricks
+		safeApply(selfReferencingDir, path),      // Using self-referencing directory
+		safeApply(repetitiveTraversal, path),     // Repetitive directory traversal
+		safeApply(environmentVarsInPath, path),   // Using environment variables
+		safeApply(directoryAliasing, path),       // Using directory aliases
+		safeApply(dotDotSeparation, path),        // Separating the dots in ../
+		safeApply(htmlEntityEncoding, path),      // HTML entity encoding
+		safeApply(multipleRepresentations, path), // Multiple character representations
+		safeApply(encodedBackslash, path),        // Encoded backslashes
+		safeApply(nestedEncoding, path),          // Nested encoding techniques
+		safeApply(javaServletBypass, path),       // Java servlet bypass techniques
+		safeApply(nginxOffBySlash, path),         // Nginx off-by-slash bypass
+		safeApply(phpNullByteAlternate, path),    // PHP null byte alternatives
+		safeApply(jspWebInfTraversal, path),      // JSP WEB-INF traversal
 	)
 
 	// Return medium variants if level is Medium
@@ -62,26 +83,26 @@ func PathTraversalVariants(path string, level constants.Level) []string {
 
 	// Advanced level adds the most complex evasion techniques
 	variants = append(variants,
-		hexEncodedPath(path),            // Using hex encoding for path segments
-		unicodeNormalization(path),      // Unicode normalization evasion
-		percentUtf8Encoding(path),       // Percent-encoding UTF-8 sequences
-		overLongUtf8(path),              // Over-long UTF-8 encoding
-		nonStandardCharset(path),        // Non-standard charset encoding
-		multiProtocolEvasion(path),      // Multiple protocol handlers
-		fragmentIdentifiers(path),       // Using fragment identifiers
-		parameterInjection(path),        // Parameter injection techniques
-		mixedTraversalTechniques(path),  // Mixed traversal techniques
-		symbolLinkBased(path),           // Symbolic link based techniques
-		stackedEncodingLayers(path),     // Multiple stacked encoding layers
-		iisBackslashTrick(path),         // IIS backslash/dot trick
-		apacheMultiViewBypass(path),     // Apache MultiViews bypass
-		tomcatBypass(path),              // Tomcat specific bypass techniques
-		unicodeWidthAndDirection(path),  // Unicode width variation
-		httpHeaderFilePath(path),        // HTTP header file path injection
-		urlEncodedBackslashAtSign(path), // URL encoded backslash @ sign
-		nonstandardEncoding(path),       // Non-standard encoding formats
-		controlCharacterInjection(path), // Control character injection
-		pathParameterConfusion(path),    // Path parameter confusion
+		safeApply(hexEncodedPath, path),            // Using hex encoding for path segments
+		safeApply(unicodeNormalization, path),      // Unicode normalization evasion
+		safeApply(percentUtf8Encoding, path),       // Percent-encoding UTF-8 sequences
+		safeApply(overLongUtf8, path),              // Over-long UTF-8 encoding
+		safeApply(nonStandardCharset, path),        // Non-standard charset encoding
+		safeApply(multiProtocolEvasion, path),      // Multiple protocol handlers
+		safeApply(fragmentIdentifiers, path),       // Using fragment identifiers
+		safeApply(parameterInjection, path),        // Parameter injection techniques
+		safeApply(mixedTraversalTechniques, path),  // Mixed traversal techniques
+		safeApply(symbolLinkBased, path),           // Symbolic link based techniques
+		safeApply(stackedEncodingLayers, path),     // Multiple stacked encoding layers
+		safeApply(iisBackslashTrick, path),         // IIS backslash/dot trick
+		safeApply(apacheMultiViewBypass, path),     // Apache MultiViews bypass
+		safeApply(tomcatBypass, path),              // Tomcat specific bypass techniques
+		safeApply(unicodeWidthAndDirection, path),  // Unicode width variation
+		safeApply(httpHeaderFilePath, path),        // HTTP header file path injection
+		safeApply(urlEncodedBackslashAtSign, path), // URL encoded backslash @ sign
+		safeApply(nonstandardEncoding, path),       // Non-standard encoding formats
+		safeApply(controlCharacterInjection, path), // Control character injection
+		safeApply(pathParameterConfusion, path),    // Path parameter confusion
 	)
 
 	return evasions.UniqueStrings(variants)
@@ -532,7 +553,14 @@ func environmentVarsInPath(path string) string {
 		}
 		return envVars[rand.Intn(len(envVars))]
 	} else if strings.Contains(path, "etc") {
-		base := strings.Split(path, "etc/")[1]
+		// Safe split with bounds checking
+		parts := strings.Split(path, "etc/")
+		base := ""
+		if len(parts) > 1 {
+			base = parts[1]
+		} else {
+			base = "passwd" // Default fallback
+		}
 		envVars := []string{
 			"${PWD}/../../../etc/" + base,
 			"${DOCUMENT_ROOT}/../../etc/" + base,

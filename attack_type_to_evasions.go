@@ -219,7 +219,8 @@ func PrintPayloadEvasionMap() {
 	}
 }
 
-func main() {
+// Example function showing how to use the evasion mapping
+func ExampleUsage() {
 	fmt.Println("\nExample: Evasions for XSS payloads:")
 	if evasions, exists := GetEvasionsForPayload("xss"); exists {
 		for _, evasion := range evasions {

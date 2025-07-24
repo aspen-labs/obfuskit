@@ -17,7 +17,6 @@ import (
 	"obfuskit/evasions/path"
 )
 
-// Evasion function map with wrapper functions to match signatures
 var EvasionFunctions = map[string]func(string, constants.Level) []string{
 	"Base64Variants": func(payload string, level constants.Level) []string {
 		return encoders.Base64Variants(payload, level)
@@ -48,7 +47,6 @@ var EvasionFunctions = map[string]func(string, constants.Level) []string{
 	},
 }
 
-// Payload to evasion mapping
 var PayloadEvasionMap = map[string][]string{
 	"xss": {
 		"HTMLVariants",
@@ -57,7 +55,7 @@ var PayloadEvasionMap = map[string][]string{
 		"OctalVariants",
 		"Base64Variants",
 		"BestFitVariants",
-		"XSSVariants",
+		// "XSSVariants",
 	},
 	"sqli": {
 		"UnicodeVariants",
@@ -109,7 +107,6 @@ var PayloadEvasionMap = map[string][]string{
 	},
 }
 
-// Evasion categories
 var EvasionCategories = map[string]string{
 	"HTMLVariants":          "encoder",
 	"UnicodeVariants":       "encoder",
@@ -120,10 +117,9 @@ var EvasionCategories = map[string]string{
 	"UnixCmdVariants":       "command",
 	"WindowsCmdVariants":    "command",
 	"PathTraversalVariants": "path",
-	"XSSVariants":           "xss",
+	// "XSSVariants":           "xss",
 }
 
-// Evasion utility functions
 func GetEvasionsForPayload(payloadType string) ([]string, bool) {
 	evasions, exists := PayloadEvasionMap[payloadType]
 	return evasions, exists
@@ -334,8 +330,8 @@ const (
 	stateDone
 )
 
-// model represents the application state
-type model struct {
+// Model represents the application state
+type Model struct {
 	list                  list.Model
 	textInput             textinput.Model
 	current               state
@@ -358,7 +354,7 @@ type model struct {
 }
 
 // initialModel creates the initial model state
-func initialModel() model {
+func initialModel() Model {
 	l := list.New(mainMenuItems, list.NewDefaultDelegate(), 0, 0)
 	l.Title = "Select what you want to do:"
 
@@ -368,18 +364,18 @@ func initialModel() model {
 	ti.CharLimit = 256
 	ti.Width = 50
 
-	return model{
+	return Model{
 		list:      l,
 		textInput: ti,
 		current:   stateMainMenu,
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return tea.EnterAltScreen
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if !m.ready {
@@ -468,7 +464,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) handleEnterKey() (tea.Model, tea.Cmd) {
+func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 	switch m.current {
 	case stateMainMenu:
 		selected := m.list.SelectedItem().(item).title
@@ -593,7 +589,7 @@ func (m model) handleEnterKey() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) handleEscKey() (tea.Model, tea.Cmd) {
+func (m Model) handleEscKey() (tea.Model, tea.Cmd) {
 	switch m.current {
 	case stateChooseAttackMethod:
 		m.list.SetItems(mainMenuItems)
@@ -639,7 +635,7 @@ func (m model) handleEscKey() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	switch m.current {
 	case stateEnterURL:
 		return fmt.Sprintf(
@@ -721,7 +717,7 @@ func autoString(auto bool) string {
 }
 
 // Global variable to store the final selection
-var FinalSelection model
+var FinalSelection Model
 
 // GetInteractiveCmd returns the interactive command
 func GetInteractiveCmd() *cobra.Command {
@@ -746,7 +742,7 @@ func runInteractive(cmd *cobra.Command, args []string) {
 }
 
 // displayFinalConfiguration shows the final configuration to the user
-func displayFinalConfiguration(m model) {
+func displayFinalConfiguration(m Model) {
 	if m.current == stateDone {
 		fmt.Println("\n" + strings.Repeat("=", 50))
 		fmt.Println("FINAL CONFIGURATION")
@@ -783,16 +779,16 @@ func displayFinalConfiguration(m model) {
 }
 
 // RunInteractiveUI runs the interactive UI and returns the final selection
-func RunInteractiveUI() (model, error) {
+func RunInteractiveUI() (Model, error) {
 	p := tea.NewProgram(initialModel())
 	finalModel, err := p.Run()
 	if err != nil {
-		return model{}, fmt.Errorf("error running interactive UI: %w", err)
+		return Model{}, fmt.Errorf("error running interactive UI: %w", err)
 	}
 
-	m, ok := finalModel.(model)
+	m, ok := finalModel.(Model)
 	if !ok {
-		return model{}, fmt.Errorf("unexpected model type")
+		return Model{}, fmt.Errorf("unexpected model type")
 	}
 
 	// Store the selection globally for backward compatibility
@@ -800,16 +796,13 @@ func RunInteractiveUI() (model, error) {
 
 	// Validate the selection
 	if err := ValidateSelection(m); err != nil {
-		return model{}, fmt.Errorf("invalid selection: %w", err)
+		return Model{}, fmt.Errorf("invalid selection: %w", err)
 	}
 
 	return m, nil
 }
 
-// GetFinalSelection returns the final selection made by the user
-// This function runs the interactive UI if no selection has been made
-func GetFinalSelection() model {
-	// If no selection has been made, run the interactive UI
+func GetFinalSelection() Model {
 	if FinalSelection.current != stateDone {
 		selection, err := RunInteractiveUI()
 		if err != nil {
@@ -830,7 +823,7 @@ func (e ValidationError) Error() string {
 	return fmt.Sprintf("validation error in %s: %s", e.Field, e.Message)
 }
 
-func ValidateSelection(m model) error {
+func ValidateSelection(m Model) error {
 	if m.Selection == "" {
 		return ValidationError{Field: "Selection", Message: "main action is required"}
 	}
