@@ -49,6 +49,38 @@ func NewLogger(out *os.File) *Logger {
 
 var defaultLogger = NewLogger(os.Stdout)
 
+// normalizeURL ensures the URL has a proper scheme and explicit port
+func normalizeURL(targetURL string) (string, error) {
+	// Add scheme if missing
+	if !strings.Contains(targetURL, "://") {
+		targetURL = "http://" + targetURL
+	}
+
+	parsedURL, err := url.Parse(targetURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Add default port if missing
+	if parsedURL.Port() == "" {
+		hostname := parsedURL.Hostname()
+		if hostname == "" {
+			return "", fmt.Errorf("invalid hostname in URL: %s", targetURL)
+		}
+
+		switch parsedURL.Scheme {
+		case "http":
+			parsedURL.Host = hostname + ":80"
+		case "https":
+			parsedURL.Host = hostname + ":443"
+		default:
+			parsedURL.Host = hostname + ":80"
+		}
+	}
+
+	return parsedURL.String(), nil
+}
+
 type TestResult struct {
 	Request          *fasthttp.Request
 	Payload          string
@@ -148,17 +180,24 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 
 	logger.info.Printf("Starting header injection test with payload: %s", payload)
 
+	// Normalize the URL
+	normalizedURL, err := normalizeURL(targetURL)
+	if err != nil {
+		logger.error.Printf("Failed to normalize URL %s: %v", targetURL, err)
+		return results
+	}
+
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(resp)
 
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	req.Header.Set("X-Custom-Header", payload)
 
-	logger.debug.Printf("Sending request to %s with basic header injection", targetURL)
+	logger.debug.Printf("Sending request to %s with basic header injection", normalizedURL)
 	start := time.Now()
-	err := fasthttp.Do(req, resp)
+	err = fasthttp.Do(req, resp)
 	duration := time.Since(start)
 
 	if err == nil {
@@ -186,7 +225,7 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 		defer fasthttp.ReleaseRequest(req)
 		defer fasthttp.ReleaseResponse(resp)
 
-		req.SetRequestURI(targetURL)
+		req.SetRequestURI(normalizedURL)
 		req.Header.Set("X-Custom-Header", transformedPayload)
 
 		logger.debug.Printf("Sending request with %s encoded header: %s", transformer.Name(), transformedPayload)
@@ -215,7 +254,7 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 	req = fasthttp.AcquireRequest()
 	resp = fasthttp.AcquireResponse()
 
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 
 	// Directly set the raw header - note the \r\n with space for line folding
 	if len(payload) > 2 {
@@ -249,7 +288,7 @@ func (i *FastHTTPHeaderInjector) Inject(targetURL string, payload string, logger
 	req = fasthttp.AcquireRequest()
 	resp = fasthttp.AcquireResponse()
 
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	// Add header multiple times with different values
 	req.Header.Add("X-Duplicate-Header", "legitimate")
 	req.Header.Add("X-Duplicate-Header", payload)
@@ -403,6 +442,13 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 
 	logger.info.Printf("Starting body injection test with payload: %s", payload)
 
+	// Normalize the URL
+	normalizedURL, err := normalizeURL(targetURL)
+	if err != nil {
+		logger.error.Printf("Failed to normalize URL %s: %v", targetURL, err)
+		return results
+	}
+
 	// Basic form parameter injection
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
@@ -410,14 +456,14 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 	defer fasthttp.ReleaseResponse(resp)
 
 	formBody := fmt.Sprintf("param=%s", payload)
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBodyString(formBody)
 
 	logger.debug.Printf("Sending POST request with form body: %s", formBody)
 	start := time.Now()
-	err := fasthttp.Do(req, resp)
+	err = fasthttp.Do(req, resp)
 	duration := time.Since(start)
 
 	if err == nil {
@@ -441,7 +487,7 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 	resp = fasthttp.AcquireResponse()
 
 	jsonBody := fmt.Sprintf(`{"param": "%s"}`, strings.ReplaceAll(payload, `"`, `\"`))
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBodyString(jsonBody)
@@ -472,7 +518,7 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 	resp = fasthttp.AcquireResponse()
 
 	duplicateFormBody := fmt.Sprintf("param=legitimate&param=%s", payload)
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBodyString(duplicateFormBody)
@@ -502,7 +548,7 @@ func (i *FastHTTPBodyInjector) Inject(targetURL string, payload string, logger *
 	req = fasthttp.AcquireRequest()
 	resp = fasthttp.AcquireResponse()
 
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBodyString(fmt.Sprintf(`{"param": "%s"}`, strings.ReplaceAll(payload, `"`, `\"`)))
@@ -547,6 +593,13 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 
 	logger.info.Printf("Starting protocol injection test with payload: %s", payload)
 
+	// Normalize the URL
+	normalizedURL, err := normalizeURL(targetURL)
+	if err != nil {
+		logger.error.Printf("Failed to normalize URL %s: %v", targetURL, err)
+		return results
+	}
+
 	// Test with unusual HTTP methods
 	unusualMethods := []string{"TRACE", "PATCH", "PROPFIND", "CONNECT"}
 	for _, method := range unusualMethods {
@@ -555,13 +608,13 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 		defer fasthttp.ReleaseRequest(req)
 		defer fasthttp.ReleaseResponse(resp)
 
-		req.SetRequestURI(targetURL)
+		req.SetRequestURI(normalizedURL)
 		req.Header.SetMethod(method)
 		req.Header.Set("X-Payload", payload)
 
 		logger.debug.Printf("Sending %s request with payload in X-Payload header", method)
 		start := time.Now()
-		err := fasthttp.Do(req, resp)
+		err = fasthttp.Do(req, resp)
 		duration := time.Since(start)
 
 		if err == nil {
@@ -585,7 +638,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 
 	// Set a raw header with line folding
 	headerName := "X-Custom-Header"
@@ -594,7 +647,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 
 	logger.debug.Printf("Sending request with header line folding: %s", headerValue)
 	start := time.Now()
-	err := fasthttp.Do(req, resp)
+	err = fasthttp.Do(req, resp)
 	duration := time.Since(start)
 
 	if err == nil {
@@ -617,7 +670,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 	req = fasthttp.AcquireRequest()
 	resp = fasthttp.AcquireResponse()
 
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Transfer-Encoding", "chunked")
@@ -652,7 +705,7 @@ func (i *FastHTTPProtocolInjector) Inject(targetURL string, payload string, logg
 	req = fasthttp.AcquireRequest()
 	resp = fasthttp.AcquireResponse()
 
-	req.SetRequestURI(targetURL)
+	req.SetRequestURI(normalizedURL)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
