@@ -1,0 +1,91 @@
+name: Config File Testing
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'cmd/config.go'
+      - 'main.go'
+      - '**.yaml'
+      - '**.json'
+  pull_request:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'cmd/config.go'
+      - 'main.go'
+      - '**.yaml'
+      - '**.json'
+
+jobs:
+  test-config:
+    name: Test Configuration Features
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.4'
+
+    - name: Build obfuskit
+      run: go build -o obfuskit .
+
+    - name: Test YAML config generation
+      run: |
+        ./obfuskit -generate-config yaml
+        test -f config.yaml
+        echo "✅ YAML config generated successfully"
+
+    - name: Test JSON config generation
+      run: |
+        ./obfuskit -generate-config json  
+        test -f config.json
+        echo "✅ JSON config generated successfully"
+
+    - name: Validate YAML config structure
+      run: |
+        # Check if required fields exist in generated YAML
+        grep -q "action:" config.yaml
+        grep -q "attack:" config.yaml
+        grep -q "payload:" config.yaml
+        grep -q "evasion:" config.yaml
+        grep -q "target:" config.yaml
+        grep -q "report:" config.yaml
+        echo "✅ YAML config has required structure"
+
+    - name: Validate JSON config structure
+      run: |
+        # Check if JSON is valid and has required fields
+        python3 -c "
+        import json
+        with open('config.json') as f:
+            config = json.load(f)
+        required_fields = ['action', 'attack', 'payload', 'evasion', 'target', 'report']
+        for field in required_fields:
+            assert field in config, f'Missing field: {field}'
+        print('✅ JSON config has required structure')
+        "
+
+    - name: Test help command
+      run: |
+        ./obfuskit -help | grep -q "generate-config"
+        echo "✅ Help shows config options"
+
+    - name: Test config validation (should fail with empty config)
+      run: |
+        echo "{}" > empty.json
+        if ./obfuskit -config empty.json 2>&1 | grep -q "action is required"; then
+          echo "✅ Config validation working correctly"
+        else
+          echo "❌ Config validation not working"
+          exit 1
+        fi
+
+    - name: Display generated configs for review
+      run: |
+        echo "=== Generated YAML Config ==="
+        cat config.yaml
+        echo -e "\n=== Generated JSON Config ==="
+        cat config.json
