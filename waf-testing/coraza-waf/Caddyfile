@@ -1,0 +1,50 @@
+{
+	debug
+	auto_https off
+	order coraza_waf first
+	log {
+		output stdout
+		format console
+		level debug
+		include "http.handlers.waf"
+	}
+}
+
+(waf) {
+	coraza_waf {
+		load_owasp_crs
+		directives `
+		Include @coraza.conf-recommended
+		Include @crs-setup.conf.example
+		Include @owasp_crs/*.conf
+		SecDefaultAction "phase:3,log,auditlog,pass"
+		SecDefaultAction "phase:4,log,auditlog,pass"
+		SecDefaultAction "phase:5,log,auditlog,pass"
+		SecRuleEngine On
+		SecDebugLog /app/logs/debug.log
+		SecDebugLogLevel 9
+		SecRule REQUEST_URI "@streq /admin" "id:101,phase:1,t:lowercase,deny,status:403"
+		SecRule REQUEST_BODY "@rx maliciouspayload" "id:102,phase:2,t:lowercase,deny,status:403"
+		SecRule RESPONSE_STATUS "@rx 406" "id:103,phase:3,t:lowercase,deny,status:403"
+		SecResponseBodyAccess On
+		SecResponseBodyMimeType application/json
+		SecRule RESPONSE_BODY "@contains responsebodycode" "id:104,phase:4,t:lowercase,deny,status:403"
+		SecAuditEngine On
+		SecAuditLog /app/logs/audit.log
+		SecAuditLogFormat json
+		`
+	}
+
+	handle_errors 403 {
+		header X-Blocked "true"
+		root * /etc/caddy/custom-pages
+		rewrite * /{err.status_code}.html
+		file_server
+		templates
+	}
+}
+
+:8000 {
+	import waf
+	reverse_proxy {$ECHOSERVER_HOST:echoserver}:8080
+}
