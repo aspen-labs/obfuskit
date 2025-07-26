@@ -1,0 +1,18 @@
+version: '3.8'
+
+
+services:
+    
+  echoserver:
+    image: piyushroshan/echo-server:arm64
+    ports:
+      - "8080:8080"
+  
+  corazacaddy:
+    image: piyushroshan/coraza-caddy:arm64
+    depends_on:
+      - echoserver
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
