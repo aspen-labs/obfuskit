@@ -44,6 +44,8 @@ type TestSummary struct {
 func main() {
 	// Define command line flags
 	helpFlag := flag.Bool("help", false, "Show help information")
+	configFlag := flag.String("config", "", "Path to configuration file (YAML or JSON)")
+	generateConfigFlag := flag.String("generate-config", "", "Generate example config file (yaml or json)")
 	flag.Parse()
 
 	// Show help if requested
@@ -52,11 +54,40 @@ func main() {
 		return
 	}
 
-	fmt.Println("=== WAF Efficacy Testing Tool ===")
-	fmt.Println("Initializing interactive configuration...")
+	// Generate example config if requested
+	if *generateConfigFlag != "" {
+		err := generateExampleConfig(*generateConfigFlag)
+		if err != nil {
+			log.Fatalf("Error generating config: %v", err)
+		}
+		return
+	}
 
-	// Get user configuration through interactive UI
-	finalSelection := cmd.GetFinalSelection()
+	fmt.Println("=== WAF Efficacy Testing Tool ===")
+
+	var finalSelection cmd.Model
+	var err error
+
+	// Load configuration from file or use interactive mode
+	if *configFlag != "" {
+		fmt.Printf("Loading configuration from: %s\n", *configFlag)
+		config, configErr := cmd.LoadConfig(*configFlag)
+		if configErr != nil {
+			log.Fatalf("Error loading config: %v", configErr)
+		}
+
+		configErr = cmd.ValidateConfig(config)
+		if configErr != nil {
+			log.Fatalf("Invalid config: %v", configErr)
+		}
+
+		finalSelection = cmd.ConvertConfigToModel(config)
+		fmt.Println("Configuration loaded successfully!")
+	} else {
+		fmt.Println("Initializing interactive configuration...")
+		// Get user configuration through interactive UI
+		finalSelection = cmd.GetFinalSelection()
+	}
 
 	// Use evasion level from interactive selection (default to Medium if not set)
 	evasionLevel := constants.Medium
@@ -81,7 +112,6 @@ func main() {
 		Config: finalSelection,
 	}
 
-	var err error
 	switch finalSelection.Selection {
 	case "Generate Payloads":
 		err = handleGeneratePayloads(testResults, evasionLevel)
@@ -102,9 +132,9 @@ func main() {
 
 	// Generate reports only if we ran tests (not just generating payloads)
 	if finalSelection.Selection != "Generate Payloads" {
-		err = generateReports(testResults)
-		if err != nil {
-			log.Fatalf("Error generating reports: %v", err)
+		reportErr := generateReports(testResults)
+		if reportErr != nil {
+			log.Fatalf("Error generating reports: %v", reportErr)
 		}
 	} else {
 		fmt.Println("\n📝 Skipping report generation (payloads generated only)")
@@ -121,17 +151,42 @@ func showHelp() {
 	fmt.Println("  obfuskit [flags]")
 	fmt.Println("")
 	fmt.Println("Flags:")
-	fmt.Println("  -help           Show this help information")
+	fmt.Println("  -help                    Show this help information")
+	fmt.Println("  -config <file>           Use configuration file (YAML or JSON)")
+	fmt.Println("  -generate-config <fmt>   Generate example config (yaml or json)")
 	fmt.Println("")
 	fmt.Println("Features:")
 	fmt.Println("  • Interactive menu-driven interface")
+	fmt.Println("  • Configuration file support (YAML/JSON)")
 	fmt.Println("  • Multiple evasion levels (Basic, Medium, Advanced)")
 	fmt.Println("  • Support for various attack types (XSS, SQLi, Command Injection, etc.)")
 	fmt.Println("  • Multiple encoding options")
 	fmt.Println("  • Payload generation and testing capabilities")
 	fmt.Println("")
-	fmt.Println("Example:")
-	fmt.Println("  obfuskit                    # Run the interactive WAF testing tool")
+	fmt.Println("Examples:")
+	fmt.Println("  obfuskit                            # Run with interactive interface")
+	fmt.Println("  obfuskit -config config.yaml        # Run with config file")
+	fmt.Println("  obfuskit -generate-config yaml       # Generate example YAML config")
+	fmt.Println("  obfuskit -generate-config json       # Generate example JSON config")
+}
+
+// generateExampleConfig generates and saves an example configuration file
+func generateExampleConfig(format string) error {
+	data, err := cmd.GenerateExampleConfig(format)
+	if err != nil {
+		return fmt.Errorf("failed to generate config: %w", err)
+	}
+
+	filename := fmt.Sprintf("config.%s", format)
+	err = os.WriteFile(filename, data, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	fmt.Printf("✅ Example %s configuration generated: %s\n", strings.ToUpper(format), filename)
+	fmt.Println("\nTo use this config file, run:")
+	fmt.Printf("  obfuskit -config %s\n", filename)
+	return nil
 }
 
 // parseEvasionLevel converts string level to constants.Level
