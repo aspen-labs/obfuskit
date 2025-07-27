@@ -1,0 +1,8 @@
+action: Generate Payloads
+attack:
+    type: generic
+evasion:
+    level: Advanced
+target:
+    method: Response
+

@@ -89,7 +89,7 @@ func ValidateConfig(config *Config) error {
 			return fmt.Errorf("attack.type is required")
 		}
 
-		validAttacks := []string{"xss", "sqli", "unixcmdi", "wincmdi", "path", "fileaccess", "ldapi"}
+		validAttacks := []string{"xss", "sqli", "unixcmdi", "wincmdi", "path", "fileaccess", "ldapi", "generic"}
 		if !contains(validAttacks, config.Attack.Type) {
 			return fmt.Errorf("invalid attack.type: %s (valid: %s)", config.Attack.Type, strings.Join(validAttacks, ", "))
 		}
@@ -144,10 +144,14 @@ func ValidateConfig(config *Config) error {
 	}
 
 	if config.Target.Method == "" {
-		config.Target.Method = "URL" // default
+		if config.Action == "Send to URL" {
+			config.Target.Method = "URL"
+		} else {
+			config.Target.Method = "File"
+		}
 	}
 
-	validTargetMethods := []string{"URL", "File"}
+	validTargetMethods := []string{"URL", "File", "Response"}
 	if !contains(validTargetMethods, config.Target.Method) {
 		return fmt.Errorf("invalid target.method: %s (valid: %s)", config.Target.Method, strings.Join(validTargetMethods, ", "))
 	}
