@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +16,8 @@ import (
 	"obfuskit/constants"
 	"obfuskit/report"
 	"obfuskit/request"
+
+	"gopkg.in/yaml.v3"
 )
 
 // PayloadResults represents the structure for storing generated payloads
@@ -41,11 +46,40 @@ type TestSummary struct {
 	EvasionTypes    []string
 }
 
+// BurpRequest is the expected JSON format from Burp
+// Example: {"method":"GET", "url":"http://target", "headers":{"X-Test":"1"}, "body":"..."}
+type BurpRequest struct {
+	Payload string `json:"payload"`
+}
+
+type BurpEvadedPayload struct {
+	OriginalPayload string          `json:"original_payload"`
+	AttackType      string          `json:"attack_type"`
+	EvasionType     string          `json:"evasion_type"`
+	Level           constants.Level `json:"level"`
+	Variant         string          `json:"variant"`
+}
+
+type BurpResponse struct {
+	Status   string              `json:"status"`
+	Payloads []BurpEvadedPayload `json:"payloads"`
+}
+
+// ServerHandler is a struct handler for Burp integration
+type ServerHandler struct {
+	Config *cmd.Config
+}
+
+func (h *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	processServerRequestHandler(w, r, h.Config)
+}
+
 func main() {
 	// Define command line flags
 	helpFlag := flag.Bool("help", false, "Show help information")
 	configFlag := flag.String("config", "", "Path to configuration file (YAML or JSON)")
 	generateConfigFlag := flag.String("generate-config", "", "Generate example config file (yaml or json)")
+	serverFlag := flag.Bool("server", false, "Start integration webservice")
 	flag.Parse()
 
 	// Show help if requested
@@ -63,7 +97,31 @@ func main() {
 		return
 	}
 
-	fmt.Println("=== WAF Efficacy Testing Tool ===")
+	// Start integration webservice if requested
+	if *serverFlag {
+		var config *cmd.Config
+		if *configFlag != "" {
+			var configErr error
+			config, configErr = cmd.LoadConfig(*configFlag)
+			if configErr != nil {
+				log.Fatalf("Error loading config: %v", configErr)
+			}
+			configErr = cmd.ValidateConfig(config)
+			if configErr != nil {
+				log.Fatalf("Invalid config: %v", configErr)
+			}
+		}
+
+		handler := &ServerHandler{Config: config}
+		http.Handle("/api/payloads", handler)
+		log.Println("[+] Integration webservice listening on :8181 (/api/payloads)")
+		if err := http.ListenAndServe(":8181", nil); err != nil {
+			log.Fatalf("Failed to start HTTP server: %v", err)
+		}
+		return
+	}
+
+	fmt.Println("=== Obfuskit. A WAF Efficacy Testing Tool ===")
 
 	var finalSelection cmd.Model
 	var err error
@@ -143,9 +201,85 @@ func main() {
 	fmt.Println("\n✅ WAF testing completed successfully!")
 }
 
+// processServerRequestHandler handles POST requests from Burp
+func processServerRequestHandler(w http.ResponseWriter, r *http.Request, config *cmd.Config) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST supported", http.StatusMethodNotAllowed)
+		return
+	}
+	log.Println("Received Burp request")
+	var req BurpRequest
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	payload := req.Payload
+	attackType := detectAttackType(payload)
+
+	// Load config.yaml for evasion level if available
+	level := constants.Medium // default
+	if config != nil {
+		attackType = config.Attack.Type
+		level = parseEvasionLevel(config.Evasion.Level)
+	}
+
+	evasions, exists := cmd.GetEvasionsForPayload(attackType)
+	if !exists {
+		log.Println("No evasions found for attack type: ", attackType)
+		evasions = []string{"Base64Variants", "HexVariants", "UnicodeVariants"}
+	}
+
+	var results []BurpEvadedPayload
+	for _, evasionType := range evasions {
+		variants, err := cmd.ApplyEvasion(payload, evasionType, level)
+		if err != nil {
+			continue
+		}
+		for _, variant := range variants {
+			results = append(results, BurpEvadedPayload{
+				OriginalPayload: payload,
+				AttackType:      attackType,
+				EvasionType:     evasionType,
+				Level:           level,
+				Variant:         variant,
+			})
+		}
+	}
+
+	resp := BurpResponse{
+		Status:   "ok",
+		Payloads: results,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// yamlUnmarshal is a helper to unmarshal YAML config
+func yamlUnmarshal(data []byte, out interface{}) error {
+	type yamlUnmarshalFunc func([]byte, interface{}) error
+	var fn yamlUnmarshalFunc
+	if y, err := importYAML(); err == nil {
+		fn = y
+	} else {
+		return err
+	}
+	return fn(data, out)
+}
+
+// importYAML tries to import yaml.v2
+func importYAML() (func([]byte, interface{}) error, error) {
+	// Use reflection to avoid hard dependency if needed
+	return yaml.Unmarshal, nil // assuming yaml is imported
+}
+
 // showHelp displays usage information
 func showHelp() {
-	fmt.Println("WAF Efficacy Testing Tool")
+	fmt.Println("Obfuskit. A WAF Efficacy Testing Tool")
 	fmt.Println("")
 	fmt.Println("Usage:")
 	fmt.Println("  obfuskit [flags]")
@@ -166,8 +300,9 @@ func showHelp() {
 	fmt.Println("Examples:")
 	fmt.Println("  obfuskit                            # Run with interactive interface")
 	fmt.Println("  obfuskit -config config.yaml        # Run with config file")
-	fmt.Println("  obfuskit -generate-config yaml       # Generate example YAML config")
-	fmt.Println("  obfuskit -generate-config json       # Generate example JSON config")
+	fmt.Println("  obfuskit -generate-config yaml      # Generate example YAML config")
+	fmt.Println("  obfuskit -generate-config json      # Generate example JSON config")
+	fmt.Println("  obfuskit -burp                      # Run Burp integration webservice")
 }
 
 // generateExampleConfig generates and saves an example configuration file

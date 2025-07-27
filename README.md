@@ -5,9 +5,8 @@ To run, do the following:
 
 ```
  go build -o obfuskit .
- ./obfuskit
+ ./obfuskit -help
 ```
-
 
 ## Features
 Three Levels of Obfuscation/Evasion:
@@ -42,4 +41,22 @@ Apply multiple encoding schemes including best-fit/worst-fit representations.
 - Build regression suites for security tooling with evolving evasions
 - Evaluate encoding and obfuscation-based payload handling
 
-### Usage and Installation - TODO 
+### Usage and Installation - TODO
+
+To run obfuskit in interactive mode, do the following:
+
+```
+./obfuskit
+```
+
+To generate an example configuration file, do the following:
+
+```
+./obfuskit -generate-config yaml
+```
+
+To run obfuskit with a configuration file, do the following:
+
+```
+./obfuskit -config config.yaml
+```

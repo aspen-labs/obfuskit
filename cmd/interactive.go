@@ -105,6 +105,21 @@ var PayloadEvasionMap = map[string][]string{
 		"Base64Variants",
 		"BestFitVariants",
 	},
+	"generic": {
+		"HTMLVariants",
+		"UnicodeVariants",
+		"HexVariants",
+		"OctalVariants",
+		"Base64Variants",
+		"BestFitVariants",
+		"UnixCmdVariants",
+		"WindowsCmdVariants",
+		"PathTraversalVariants",
+		"FileAccessVariants",
+		"LDAPVariants",
+		"SSRFVariants",
+		"XXEVariants",
+	},
 }
 
 var EvasionCategories = map[string]string{
