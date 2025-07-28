@@ -38,7 +38,7 @@ func HandleGeneratePayloads(results *model.TestResults, level constants.Level) e
 	fmt.Printf("✅ Generated %d payload variants across %d base payloads\n",
 		GetTotalVariants(results), len(results.PayloadResults))
 
-	if err := SavePayloadsToFile(results); err != nil {
+	if err := util.SavePayloadsToFile(results); err != nil {
 		fmt.Printf("Warning: Failed to save payloads to file: %v\n", err)
 	} else {
 		fmt.Println("✅ Payloads saved to:")
@@ -165,15 +165,15 @@ func GenerateVariantsForPayload(results *model.TestResults, payload, attackType 
 }
 
 func FilterEvasions(evasions []string, config interface{}) []string {
-	cfg, ok := config.(cmd.Model)
+	cfg, ok := config.(*cmd.Config)
 	if !ok {
 		return evasions
 	}
-	if cfg.SelectedPayload == "All" {
+	if cfg.Payload.Method == "Auto" {
 		return evasions
 	}
 	var filtered []string
-	switch cfg.SelectedPayload {
+	switch cfg.Payload.Method {
 	case "Encodings":
 		encodingTypes := map[string]bool{
 			"Base64Variants": true, "HexVariants": true, "HTMLVariants": true,
@@ -267,9 +267,4 @@ func GetTotalVariants(results *model.TestResults) int {
 		total += len(pr.Variants)
 	}
 	return total
-}
-
-func SavePayloadsToFile(results *model.TestResults) error {
-	// Implementation placeholder (move from main.go if needed)
-	return nil
 }
