@@ -11,10 +11,10 @@ import (
 
 // NucleiTemplate represents a nuclei template structure
 type NucleiTemplate struct {
-	ID       string                 `yaml:"id"`
-	Info     NucleiInfo             `yaml:"info"`
-	Payloads map[string][]string   `yaml:"payloads,omitempty"`
-	Requests []NucleiRequest       `yaml:"requests"`
+	ID       string              `yaml:"id"`
+	Info     NucleiInfo          `yaml:"info"`
+	Payloads map[string][]string `yaml:"payloads,omitempty"`
+	Requests []NucleiRequest     `yaml:"requests"`
 }
 
 type NucleiInfo struct {
@@ -26,11 +26,11 @@ type NucleiInfo struct {
 }
 
 type NucleiRequest struct {
-	Method      string            `yaml:"method"`
-	Path        []string          `yaml:"path"`
-	Headers     map[string]string `yaml:"headers,omitempty"`
-	Body        string            `yaml:"body,omitempty"`
-	Matchers    []NucleiMatcher   `yaml:"matchers"`
+	Method   string            `yaml:"method"`
+	Path     []string          `yaml:"path"`
+	Headers  map[string]string `yaml:"headers,omitempty"`
+	Body     string            `yaml:"body,omitempty"`
+	Matchers []NucleiMatcher   `yaml:"matchers"`
 }
 
 type NucleiMatcher struct {
@@ -48,7 +48,7 @@ func GenerateNucleiTemplates(results []request.TestResult, outputPath string) er
 
 	// Group results by attack type/payload pattern
 	templates := generateTemplateGroups(results)
-	
+
 	// Create output directory if it doesn't exist
 	if err := os.MkdirAll(outputPath, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %v", err)
@@ -75,7 +75,7 @@ func GenerateNucleiTemplates(results []request.TestResult, outputPath string) er
 // generateTemplateGroups creates nuclei templates grouped by attack patterns
 func generateTemplateGroups(results []request.TestResult) []NucleiTemplate {
 	var templates []NucleiTemplate
-	
+
 	// Group by evasion technique
 	evasionGroups := make(map[string][]request.TestResult)
 	for _, result := range results {
@@ -165,7 +165,7 @@ func generateRequestsForGroup(results []request.TestResult) []NucleiRequest {
 				Negative: false,
 			},
 			{
-				Type:     "status", 
+				Type:     "status",
 				Status:   []int{403, 406, 429},
 				Negative: true,
 			},
@@ -375,7 +375,7 @@ func GenerateNucleiTemplatesFromPayloads(payloadResults []PayloadResult, outputP
 
 	// Group payloads by attack type and evasion type
 	templates := generateTemplateGroupsFromPayloads(payloadResults)
-	
+
 	// Generate individual template files
 	for i, template := range templates {
 		filename := fmt.Sprintf("%s/template_%d_%s.yaml", outputPath, i+1, sanitizeFilename(template.ID))
@@ -397,7 +397,7 @@ func GenerateNucleiTemplatesFromPayloads(payloadResults []PayloadResult, outputP
 // generateTemplateGroupsFromPayloads creates nuclei templates grouped by attack and evasion type
 func generateTemplateGroupsFromPayloads(payloadResults []PayloadResult) []NucleiTemplate {
 	var templates []NucleiTemplate
-	
+
 	// Group by attack type and evasion type combination
 	groups := make(map[string][]PayloadResult)
 	for _, result := range payloadResults {
@@ -410,11 +410,11 @@ func generateTemplateGroupsFromPayloads(payloadResults []PayloadResult) []Nuclei
 		if len(groupResults) == 0 {
 			continue
 		}
-		
+
 		first := groupResults[0]
 		template := NucleiTemplate{
-			ID: fmt.Sprintf("waf-bypass-%s-%s", 
-				strings.ToLower(first.AttackType), 
+			ID: fmt.Sprintf("waf-bypass-%s-%s",
+				strings.ToLower(first.AttackType),
 				strings.ToLower(first.EvasionType)),
 			Info: NucleiInfo{
 				Name:        fmt.Sprintf("WAF Bypass - %s using %s", first.AttackType, first.EvasionType),
@@ -452,19 +452,19 @@ func generateRequestsForPayloads(payloads []string, attackType string) []NucleiR
 
 	// Create templates for different injection points based on attack type
 	injectionPoints := getInjectionPointsForAttackType(attackType)
-	
+
 	for _, injectionPoint := range injectionPoints {
 		request := NucleiRequest{}
-		
+
 		switch injectionPoint {
 		case "header":
 			request.Method = "GET"
 			request.Path = []string{"/"}
 			request.Headers = map[string]string{
-				"X-Test-Header":    "{{payload}}",
-				"User-Agent":       "{{payload}}",
-				"X-Forwarded-For":  "{{payload}}",
-				"X-Real-IP":        "{{payload}}",
+				"X-Test-Header":   "{{payload}}",
+				"User-Agent":      "{{payload}}",
+				"X-Forwarded-For": "{{payload}}",
+				"X-Real-IP":       "{{payload}}",
 			}
 		case "query":
 			request.Method = "GET"
@@ -496,7 +496,7 @@ func generateRequestsForPayloads(payloads []string, attackType string) []NucleiR
 				Negative: false,
 			},
 			{
-				Type:     "status", 
+				Type:     "status",
 				Status:   []int{403, 406, 429, 451},
 				Negative: true,
 			},
