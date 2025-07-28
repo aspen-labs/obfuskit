@@ -244,19 +244,23 @@ func PrintPayloadEvasionMap() {
 
 // UI Types and structures
 type item struct {
-	title any
+	title string
 	desc  string
 }
 
-func (i item) Title() string       { return i.title.(string) }
+func (i item) Title() string       { return i.title }
 func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title.(string) }
+func (i item) FilterValue() string { return i.title }
+
+type listItem struct {
+	item
+}
 
 var (
 	mainMenuItems = []list.Item{
-		item{types.ActionGeneratePayloads, "Generate and view possible attack payloads"},
-		item{types.ActionSendToURL, "Generate payloads and send them to a test URL"},
-		item{types.ActionUseExistingPayloads, "Give a path or enter a list of payloads"},
+		item{string(types.ActionGeneratePayloads), "Generate and view possible attack payloads"},
+		item{string(types.ActionSendToURL), "Generate payloads and send them to a test URL"},
+		item{string(types.ActionUseExistingPayloads), "Give a path or enter a list of payloads"},
 	}
 
 	attackItems = []list.Item{
@@ -265,13 +269,13 @@ var (
 	}
 
 	specificAttackItems = []list.Item{
-		item{types.AttackTypeXSS, "Cross Site Scripting"},
-		item{types.AttackTypeSQLI, "SQL Injection"},
-		item{types.AttackTypeUnixCMDI, "Local File Inclusion"},
-		item{types.AttackTypeWinCMDI, "Remote File Inclusion"},
-		item{types.AttackTypeOsCMDI, "OS Command Injection"},
-		item{types.AttackTypeSSRF, "Server-Side Request Forgery"},
-		item{types.AttackTypeXXE, "XML External Entity"},
+		item{string(types.AttackTypeXSS), "Cross Site Scripting"},
+		item{string(types.AttackTypeSQLI), "SQL Injection"},
+		item{string(types.AttackTypeUnixCMDI), "Local File Inclusion"},
+		item{string(types.AttackTypeWinCMDI), "Remote File Inclusion"},
+		item{string(types.AttackTypeOsCMDI), "OS Command Injection"},
+		item{string(types.AttackTypeSSRF), "Server-Side Request Forgery"},
+		item{string(types.AttackTypeXXE), "XML External Entity"},
 	}
 
 	payloadItems = []list.Item{
@@ -280,31 +284,31 @@ var (
 	}
 
 	specificPayloadItems = []list.Item{
-		item{types.PayloadMethodEncodings, "Generate payloads with various encodings"},
-		item{types.PayloadMethodFile, "Generate payloads with various path structures"},
-		item{types.PayloadMethodEnterManually, "Generate payloads with various command structures"},
+		item{string(types.PayloadMethodEncodings), "Generate payloads with various encodings"},
+		item{string(types.PayloadMethodFile), "Generate payloads with various path structures"},
+		item{string(types.PayloadMethodEnterManually), "Generate payloads with various command structures"},
 	}
 
 	encodingItems = []list.Item{
-		item{types.PayloadEncodingURL, "Encode payloads using URL encoding (%20, %3C, etc.)"},
-		item{types.PayloadEncodingHTML, "Encode payloads using HTML entities (&lt;, &gt;, etc.)"},
-		item{types.PayloadEncodingUnicode, "Encode payloads using Unicode escape sequences"},
-		item{types.PayloadEncodingBase64, "Encode payloads using Base64 encoding"},
-		item{types.PayloadEncodingHex, "Encode payloads using hexadecimal encoding"},
-		item{types.PayloadEncodingDoubleURL, "Apply URL encoding twice"},
-		item{types.PayloadEncodingMixedCase, "Use mixed case characters in payloads"},
-		item{types.PayloadEncodingUTF8, "Use UTF-8 byte sequences"},
+		item{string(types.PayloadEncodingURL), "Encode payloads using URL encoding (%20, %3C, etc.)"},
+		item{string(types.PayloadEncodingHTML), "Encode payloads using HTML entities (&lt;, &gt;, etc.)"},
+		item{string(types.PayloadEncodingUnicode), "Encode payloads using Unicode escape sequences"},
+		item{string(types.PayloadEncodingBase64), "Encode payloads using Base64 encoding"},
+		item{string(types.PayloadEncodingHex), "Encode payloads using hexadecimal encoding"},
+		item{string(types.PayloadEncodingDoubleURL), "Apply URL encoding twice"},
+		item{string(types.PayloadEncodingMixedCase), "Use mixed case characters in payloads"},
+		item{string(types.PayloadEncodingUTF8), "Use UTF-8 byte sequences"},
 	}
 
 	evasionLevelItems = []list.Item{
-		item{types.EvasionLevelBasic, "Use simple evasion techniques (fastest, fewer variants)"},
-		item{types.EvasionLevelMedium, "Use moderate evasion techniques (balanced approach)"},
-		item{types.EvasionLevelAdvanced, "Use all available evasion techniques (comprehensive, more variants)"},
+		item{string(types.EvasionLevelBasic), "Use simple evasion techniques (fastest, fewer variants)"},
+		item{string(types.EvasionLevelMedium), "Use moderate evasion techniques (balanced approach)"},
+		item{string(types.EvasionLevelAdvanced), "Use all available evasion techniques (comprehensive, more variants)"},
 	}
 
 	payloadSourceItems = []list.Item{
-		item{types.PayloadSourceFromFile, "Load payloads from a text file"},
-		item{types.PayloadSourceEnterManually, "Enter payloads manually in the terminal"},
+		item{string(types.PayloadSourceFromFile), "Load payloads from a text file"},
+		item{string(types.PayloadSourceEnterManually), "Enter payloads manually in the terminal"},
 	}
 
 	targetItems = []list.Item{
@@ -314,16 +318,16 @@ var (
 
 	reportItems = []list.Item{
 		item{"I'll pick", "Choose a specific report format"},
-		item{types.ReportTypeAll, "Generate reports in all available formats"},
+		item{string(types.ReportTypeAll), "Generate reports in all available formats"},
 	}
 
 	specificReportItems = []list.Item{
-		item{types.ReportTypeHTML, "Generate a formatted HTML Report"},
-		item{types.ReportTypePretty, "Generate a formatted report in the terminal"},
-		item{types.ReportTypePDF, "Generate a PDF document report"},
-		item{types.ReportTypeCSV, "Generate data in CSV format"},
-		item{types.ReportTypeNuclei, "Generate nuclei YAML templates for automated scanning"},
-		item{types.ReportTypeJSON, "Generate data in JSON format"},
+		item{string(types.ReportTypeHTML), "Generate a formatted HTML Report"},
+		item{string(types.ReportTypePretty), "Generate a formatted report in the terminal"},
+		item{string(types.ReportTypePDF), "Generate a PDF document report"},
+		item{string(types.ReportTypeCSV), "Generate data in CSV format"},
+		item{string(types.ReportTypeNuclei), "Generate nuclei YAML templates for automated scanning"},
+		item{string(types.ReportTypeJSON), "Generate data in JSON format"},
 	}
 )
 
@@ -487,10 +491,10 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 	switch m.current {
 	case stateMainMenu:
 		selected := m.list.SelectedItem().(item).title
-		m.SelectedAction = selected.(types.Action)
+		m.SelectedAction = types.Action(selected)
 
 		// Handle "Use Existing Payloads" differently
-		if selected == types.ActionUseExistingPayloads {
+		if selected == string(types.ActionUseExistingPayloads) {
 			m.list.SetItems(payloadSourceItems)
 			m.list.Title = "How do you want to provide payloads?"
 			m.current = stateChoosePayloadSource
@@ -515,7 +519,7 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 		}
 
 	case stateChooseSpecificAttack:
-		m.SelectedAttackType = m.list.SelectedItem().(item).title.(types.AttackType)
+		m.SelectedAttackType = types.AttackType(m.list.SelectedItem().(item).title)
 		m.list.SetItems(payloadItems)
 		m.list.Title = "Choose payload evasion method:"
 		m.current = stateChoosePayloadMethod
@@ -539,9 +543,9 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 
 	case stateChooseSpecificPayload:
 		selected := m.list.SelectedItem().(item).title
-		m.SelectedPayloadMethod = selected.(types.PayloadMethod)
+		m.SelectedPayloadMethod = types.PayloadMethod(selected)
 
-		if selected == types.PayloadMethodEncodings {
+		if selected == string(types.PayloadMethodEncodings) {
 			// Show encoding options
 			m.list.SetItems(encodingItems)
 			m.list.Title = "Choose encoding method:"
@@ -554,13 +558,13 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 		}
 
 	case stateChooseEncoding:
-		m.SelectedEncoding = m.list.SelectedItem().(item).title.(types.PayloadEncoding)
+		m.SelectedEncoding = types.PayloadEncoding(m.list.SelectedItem().(item).title)
 		m.list.SetItems(evasionLevelItems)
 		m.list.Title = "Choose evasion level:"
 		m.current = stateChooseEvasionLevel
 
 	case stateChooseEvasionLevel:
-		m.SelectedEvasionLevel = m.list.SelectedItem().(item).title.(types.EvasionLevel)
+		m.SelectedEvasionLevel = types.EvasionLevel(m.list.SelectedItem().(item).title)
 		if m.autoPayload {
 			// In auto payload mode, go directly to target selection
 			m.list.SetItems(targetItems)
@@ -575,9 +579,9 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 
 	case stateChoosePayloadSource:
 		selected := m.list.SelectedItem().(item).title
-		m.SelectedPayloadSource = selected.(types.PayloadSource)
+		m.SelectedPayloadSource = types.PayloadSource(selected)
 
-		if selected == types.PayloadSourceFromFile {
+		if selected == string(types.PayloadSourceFromFile) {
 			m.textInput.Placeholder = "Enter file path (e.g., payloads.txt)"
 			m.textInput.SetValue("")
 			m.current = stateEnterFilePath
@@ -615,7 +619,7 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 		}
 
 	case stateChooseSpecificReport:
-		m.SelectedReportType = m.list.SelectedItem().(item).title.(types.ReportType)
+		m.SelectedReportType = types.ReportType(m.list.SelectedItem().(item).title)
 		m.current = stateDone
 		return m, tea.Quit
 	}
@@ -912,4 +916,26 @@ func ValidateSelection(m Model) error {
 		return ValidationError{Field: "SelectedReportType", Message: "report type is required"}
 	}
 	return nil
+}
+
+// ConvertSelectionToConfig converts the interactive Model to a *types.Config
+func ConvertSelectionToConfig(m Model) *types.Config {
+	return &types.Config{
+		Action:     m.SelectedAction,
+		AttackType: m.SelectedAttackType,
+		Payload: types.Payload{
+			Method:   m.SelectedPayloadMethod,
+			Encoding: m.SelectedEncoding,
+			Source:   m.SelectedPayloadSource,
+			FilePath: m.PayloadFilePath,
+			Custom:   m.CustomPayloads,
+		},
+		EvasionLevel: m.SelectedEvasionLevel,
+		Target: types.Target{
+			Method: m.SelectedTargetMethod,
+			URL:    m.URL,
+			File:   "", // If you want to support file targets, add logic here
+		},
+		ReportType: m.SelectedReportType,
+	}
 }

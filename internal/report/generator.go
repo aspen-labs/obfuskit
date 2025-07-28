@@ -142,12 +142,11 @@ func GenerateCSVReport(results *model.TestResults) error {
 
 	for _, result := range results.PayloadResults {
 		for _, variant := range result.Variants {
-			line := fmt.Sprintf("%q,%s,%s,%q,%s\n",
+			line := fmt.Sprintf("%q,%s,%s,%q\n",
 				result.OriginalPayload,
 				result.AttackType,
 				result.EvasionType,
-				variant,
-				string(level))
+				variant)
 			_, err = file.WriteString(line)
 			if err != nil {
 				return err
