@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"obfuskit/cmd"
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/internal/model"
 	"obfuskit/internal/util"
 )
@@ -77,4 +77,3 @@ func ProcessServerRequestHandler(w http.ResponseWriter, r *http.Request, config 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
-

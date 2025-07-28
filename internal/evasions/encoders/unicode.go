@@ -3,8 +3,8 @@ package encoders
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/constants"
-	"obfuskit/evasions"
+	"obfuskit/internal/constants"
+	"obfuskit/internal/evasions"
 	"strings"
 	"unicode"
 )

@@ -3,8 +3,8 @@ package path
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/constants"
-	"obfuskit/evasions"
+	"obfuskit/internal/constants"
+	"obfuskit/internal/evasions"
 	"strings"
 )
 
@@ -12,7 +12,7 @@ import (
 // based on the specified obfuscation level
 func PathTraversalVariants(path string, level constants.Level) []string {
 	var variants []string
-	
+
 	// Safety function to catch panics in individual evasion functions
 	safeApply := func(fn func(string) string, input string) string {
 		defer func() {
@@ -23,7 +23,7 @@ func PathTraversalVariants(path string, level constants.Level) []string {
 		}()
 		return fn(input)
 	}
-	
+
 	safeApplyMultiple := func(fn func(string) []string, input string) []string {
 		defer func() {
 			if r := recover(); r != nil {

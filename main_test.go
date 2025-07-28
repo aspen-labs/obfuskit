@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"strings"
 	"testing"
 )

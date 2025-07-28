@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"obfuskit/cmd"
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/internal/model"
 	"obfuskit/internal/util"
 	"obfuskit/request"

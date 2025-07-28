@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sort"
 
-	"obfuskit/constants"
-	"obfuskit/evasions/command"
-	"obfuskit/evasions/encoders"
-	"obfuskit/evasions/path"
+	"obfuskit/internal/constants"
+	"obfuskit/internal/evasions/command"
+	"obfuskit/internal/evasions/encoders"
+	"obfuskit/internal/evasions/path"
 )
 
 var EvasionFunctions = map[string]func(string, constants.Level) []string{

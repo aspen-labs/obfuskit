@@ -3,7 +3,7 @@ package encoders
 // BestFitsVariants generates various best fit encoded variants of the input payload
 import (
 	"fmt"
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"strings"
 	"unicode/utf8"
 )

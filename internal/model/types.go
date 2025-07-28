@@ -1,7 +1,7 @@
 package model
 
 import (
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/request"
 )
 
