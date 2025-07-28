@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"obfuskit/evasions"
+	"obfuskit/internal/evasions"
 
 	"github.com/spf13/cobra"
 )

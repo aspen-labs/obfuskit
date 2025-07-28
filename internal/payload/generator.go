@@ -129,7 +129,7 @@ func HandleExistingPayloads(results *model.TestResults, level types.EvasionLevel
 	}
 
 	fmt.Printf("✅ Processed %d existing payloads into %d variants\n",
-		len(payloads), util.GetTotalVariants(results))
+		len(payloads), GetTotalVariants(results))
 
 	return nil
 }

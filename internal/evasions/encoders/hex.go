@@ -3,7 +3,7 @@ package encoders
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/evasions"
+	"obfuskit/internal/evasions"
 	"obfuskit/types"
 	"regexp"
 	"strings"

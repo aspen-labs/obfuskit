@@ -12,6 +12,7 @@ import (
 	"obfuskit/internal/payload"
 	"obfuskit/internal/report"
 	"obfuskit/internal/server"
+	"obfuskit/internal/util"
 	"obfuskit/types"
 )
 
@@ -69,6 +70,7 @@ func main() {
 	}
 
 	var config *types.Config
+	var finalSelection cmd.Model
 	var configErr error
 	if *configFlag != "" {
 		config, configErr = cmd.LoadConfig(*configFlag)
@@ -83,11 +85,13 @@ func main() {
 	} else {
 		fmt.Println("Initializing interactive configuration...")
 		// You may want to implement an interactive UI or fallback logic here
-		log.Fatalf("Interactive config not implemented in this refactor.")
+		finalSelection = cmd.GetFinalSelection()
 	}
 
-	// Use evasion level from config (default to Medium if not set)
-	evasionLevel := config.EvasionLevel
+	evasionLevel := types.EvasionLevelMedium
+	if finalSelection.SelectedEvasionLevel != "" {
+		evasionLevel = util.ParseEvasionLevel(finalSelection.SelectedEvasionLevel)
+	}
 
 	fmt.Println("\n==============================")
 	fmt.Println("CONFIGURATION SUMMARY")

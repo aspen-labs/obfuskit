@@ -2,7 +2,6 @@ package report
 
 import (
 	"fmt"
-	"obfuskit/constants"
 	"obfuskit/internal/model"
 	"obfuskit/report"
 	"obfuskit/types"
@@ -114,7 +113,7 @@ func GenerateReports(results *model.TestResults) error {
 	return nil
 }
 
-func GenerateNucleiTemplatesFromPayloads(results *model.TestResults, level constants.Level) error {
+func GenerateNucleiTemplatesFromPayloads(results *model.TestResults, level types.EvasionLevel) error {
 	var payloadResults []report.PayloadResult
 	for _, payloadResult := range results.PayloadResults {
 		payloadResults = append(payloadResults, report.PayloadResult{
@@ -148,7 +147,7 @@ func GenerateCSVReport(results *model.TestResults) error {
 				result.AttackType,
 				result.EvasionType,
 				variant,
-				result.Level)
+				string(level))
 			_, err = file.WriteString(line)
 			if err != nil {
 				return err

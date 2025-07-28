@@ -3,7 +3,7 @@ package util
 import (
 	"bufio"
 	"fmt"
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/internal/model"
 	"obfuskit/report"
 	"os"

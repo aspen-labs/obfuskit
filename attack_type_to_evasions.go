@@ -10,6 +10,11 @@ package main
 // 	"obfuskit/evasions/path"
 // 	"obfuskit/types"
 // )
+// 	"obfuskit/internal/constants"
+// 	"obfuskit/internal/evasions/command"
+// 	"obfuskit/internal/evasions/encoders"
+// 	"obfuskit/internal/evasions/path"
+// )
 
 // var EvasionFunctions = map[string]func(string, constants.Level) []string{
 // 	"Base64Variants":  encoders.Base64Variants,

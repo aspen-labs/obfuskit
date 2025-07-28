@@ -3,7 +3,7 @@ package path
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/evasions"
+	"obfuskit/internal/evasions"
 	"obfuskit/types"
 	"strings"
 )
