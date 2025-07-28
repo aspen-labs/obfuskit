@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"obfuskit/constants"
-	"obfuskit/evasions"
+	"obfuskit/internal/evasions"
 	"strings"
 	"time"
 )
