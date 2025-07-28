@@ -1,260 +1,180 @@
 package main
 
-import (
-	"fmt"
-	"sort"
+// import (
+// 	"fmt"
+// 	"sort"
 
-	"obfuskit/constants"
-	"obfuskit/evasions/command"
-	"obfuskit/evasions/encoders"
-	"obfuskit/evasions/path"
-)
+// 	"obfuskit/constants"
+// 	"obfuskit/evasions/command"
+// 	"obfuskit/evasions/encoders"
+// 	"obfuskit/evasions/path"
+// 	"obfuskit/types"
+// )
 
-var EvasionFunctions = map[string]func(string, constants.Level) []string{
-	"Base64Variants":  encoders.Base64Variants,
-	"BestFitVariants": encoders.BestFitVariants,
-	"HexVariants":     encoders.HexVariants,
-	"HTMLVariants":    encoders.HTMLVariants,
-	"OctalVariants":   encoders.OctalVariants,
-	"UnicodeVariants": encoders.UnicodeVariants,
+// var EvasionFunctions = map[string]func(string, constants.Level) []string{
+// 	"Base64Variants":  encoders.Base64Variants,
+// 	"BestFitVariants": encoders.BestFitVariants,
+// 	"HexVariants":     encoders.HexVariants,
+// 	"HTMLVariants":    encoders.HTMLVariants,
+// 	"OctalVariants":   encoders.OctalVariants,
+// 	"UnicodeVariants": encoders.UnicodeVariants,
 
-	"UnixCmdVariants":    command.UnixCmdVariants,
-	"WindowsCmdVariants": command.WindowsCmdVariants,
+// 	"UnixCmdVariants":    command.UnixCmdVariants,
+// 	"WindowsCmdVariants": command.WindowsCmdVariants,
 
-	"PathTraversalVariants": path.PathTraversalVariants,
-}
+// 	"PathTraversalVariants": path.PathTraversalVariants,
+// }
 
-var PayloadEvasionMap = map[string][]string{
-	"xss": {
-		"HTMLVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		// "EscapingVariants",
-		"BestFitVariants",
-		// "XSSVariants",
-	},
-	"sqli": {
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		// "EscapingVariants",
-		"BestFitVariants",
-	},
-	"unixcmdi": {
-		"UnixCmdVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		// "EscapingVariants",
-		"BestFitVariants",
-		"PathTraversalVariants",
-	},
-	"wincmdi": {
-		"WindowsCmdVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		// "EscapingVariants",
-		"BestFitVariants",
-		"PathTraversalVariants",
-	},
-	"path": {
-		"PathTraversalVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		// "EscapingVariants",
-		"BestFitVariants",
-	},
-	"fileaccess": {
-		"PathTraversalVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		// "EscapingVariants",
-		"BestFitVariants",
-	},
-	"ldapi": {
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		// "EscapingVariants",
-		"BestFitVariants",
-	},
-}
+// func GetEvasionsForPayload(attackType types.AttackType) ([]string, bool) {
+// 	evasions, exists := PayloadEvasionMap[attackType]
+// 	return evasions, exists
+// }
 
-var EvasionCategories = map[string]string{
-	"HTMLVariants":    "encoder",
-	"UnicodeVariants": "encoder",
-	"HexVariants":     "encoder",
-	"OctalVariants":   "encoder",
-	"Base64Variants":  "encoder",
-	// "EscapingVariants":      "encoder",
-	"BestFitVariants":       "encoder",
-	"UnixCmdVariants":       "command",
-	"WindowsCmdVariants":    "command",
-	"PathTraversalVariants": "path",
-	// "XSSVariants":           "xss",
-}
+// func GetEvasionsByCategory(payloadType string) map[string][]string {
+// 	evasions, exists := PayloadEvasionMap[payloadType]
+// 	if !exists {
+// 		return nil
+// 	}
 
-func GetEvasionsForPayload(payloadType string) ([]string, bool) {
-	evasions, exists := PayloadEvasionMap[payloadType]
-	return evasions, exists
-}
+// 	categorized := make(map[string][]string)
+// 	for _, evasion := range evasions {
+// 		category := EvasionCategories[evasion]
+// 		categorized[category] = append(categorized[category], evasion)
+// 	}
 
-func GetEvasionsByCategory(payloadType string) map[string][]string {
-	evasions, exists := PayloadEvasionMap[payloadType]
-	if !exists {
-		return nil
-	}
+// 	return categorized
+// }
 
-	categorized := make(map[string][]string)
-	for _, evasion := range evasions {
-		category := EvasionCategories[evasion]
-		categorized[category] = append(categorized[category], evasion)
-	}
+// func IsEvasionApplicable(payloadType, evasionType string) bool {
+// 	evasions, exists := PayloadEvasionMap[payloadType]
+// 	if !exists {
+// 		return false
+// 	}
 
-	return categorized
-}
+// 	for _, evasion := range evasions {
+// 		if evasion == evasionType {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
-func IsEvasionApplicable(payloadType, evasionType string) bool {
-	evasions, exists := PayloadEvasionMap[payloadType]
-	if !exists {
-		return false
-	}
+// func ApplyEvasion(payload, evasionType string, level constants.Level) ([]string, error) {
+// 	if payload == "" {
+// 		return nil, nil
+// 	}
 
-	for _, evasion := range evasions {
-		if evasion == evasionType {
-			return true
-		}
-	}
-	return false
-}
+// 	evasionFunc, exists := EvasionFunctions[evasionType]
+// 	if !exists {
+// 		return nil, fmt.Errorf("evasion function %q not found", evasionType)
+// 	}
 
-func ApplyEvasion(payload, evasionType string, level constants.Level) ([]string, error) {
-	if payload == "" {
-		return nil, nil
-	}
+// 	defer func() {
+// 		if r := recover(); r != nil {
+// 			fmt.Printf("Recovered from panic in %s: %v\n", evasionType, r)
+// 		}
+// 	}()
 
-	evasionFunc, exists := EvasionFunctions[evasionType]
-	if !exists {
-		return nil, fmt.Errorf("evasion function %q not found", evasionType)
-	}
+// 	return evasionFunc(payload, level), nil
+// }
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("Recovered from panic in %s: %v\n", evasionType, r)
-		}
-	}()
+// func ApplyEvasionsToPayload(payload, payloadType string, level constants.Level) map[string][]string {
+// 	if payload == "" || payloadType == "" {
+// 		return nil
+// 	}
 
-	return evasionFunc(payload, level), nil
-}
+// 	evasions, exists := GetEvasionsForPayload(payloadType)
+// 	if !exists {
+// 		return nil
+// 	}
 
-func ApplyEvasionsToPayload(payload, payloadType string, level constants.Level) map[string][]string {
-	if payload == "" || payloadType == "" {
-		return nil
-	}
+// 	results := make(map[string][]string, len(evasions))
+// 	for _, evasionType := range evasions {
+// 		variants, err := ApplyEvasion(payload, evasionType, level)
+// 		if err != nil {
+// 			results[evasionType] = []string{fmt.Sprintf("Error: %v", err)}
+// 			continue
+// 		}
+// 		if len(variants) > 0 {
+// 			results[evasionType] = variants
+// 		}
+// 	}
 
-	evasions, exists := GetEvasionsForPayload(payloadType)
-	if !exists {
-		return nil
-	}
+// 	return results
+// }
 
-	results := make(map[string][]string, len(evasions))
-	for _, evasionType := range evasions {
-		variants, err := ApplyEvasion(payload, evasionType, level)
-		if err != nil {
-			results[evasionType] = []string{fmt.Sprintf("Error: %v", err)}
-			continue
-		}
-		if len(variants) > 0 {
-			results[evasionType] = variants
-		}
-	}
+// func GetAllPayloadTypes() []string {
+// 	types := make([]string, 0, len(PayloadEvasionMap))
+// 	for payloadType := range PayloadEvasionMap {
+// 		types = append(types, payloadType)
+// 	}
+// 	sort.Strings(types)
+// 	return types
+// }
 
-	return results
-}
+// func PrintPayloadEvasionMap() {
+// 	payloadTypes := GetAllPayloadTypes()
 
-func GetAllPayloadTypes() []string {
-	types := make([]string, 0, len(PayloadEvasionMap))
-	for payloadType := range PayloadEvasionMap {
-		types = append(types, payloadType)
-	}
-	sort.Strings(types)
-	return types
-}
+// 	fmt.Println("Payload to Evasions Mapping:")
+// 	fmt.Println("============================")
 
-func PrintPayloadEvasionMap() {
-	payloadTypes := GetAllPayloadTypes()
+// 	for _, payloadType := range payloadTypes {
+// 		fmt.Printf("\n%s:\n", payloadType)
+// 		categorized := GetEvasionsByCategory(payloadType)
 
-	fmt.Println("Payload to Evasions Mapping:")
-	fmt.Println("============================")
+// 		categories := make([]string, 0, len(categorized))
+// 		for category := range categorized {
+// 			categories = append(categories, category)
+// 		}
+// 		sort.Strings(categories)
 
-	for _, payloadType := range payloadTypes {
-		fmt.Printf("\n%s:\n", payloadType)
-		categorized := GetEvasionsByCategory(payloadType)
+// 		for _, category := range categories {
+// 			evasions := categorized[category]
+// 			sort.Strings(evasions)
+// 			fmt.Printf("  %s:\n", category)
+// 			for _, evasion := range evasions {
+// 				fmt.Printf("    - %s\n", evasion)
+// 			}
+// 		}
+// 	}
+// }
 
-		categories := make([]string, 0, len(categorized))
-		for category := range categorized {
-			categories = append(categories, category)
-		}
-		sort.Strings(categories)
+// // Example function showing how to use the evasion mapping
+// func ExampleUsage() {
+// 	fmt.Println("\nExample: Evasions for XSS payloads:")
+// 	if evasions, exists := GetEvasionsForPayload("xss"); exists {
+// 		for _, evasion := range evasions {
+// 			fmt.Printf("- %s\n", evasion)
+// 		}
+// 	}
 
-		for _, category := range categories {
-			evasions := categorized[category]
-			sort.Strings(evasions)
-			fmt.Printf("  %s:\n", category)
-			for _, evasion := range evasions {
-				fmt.Printf("    - %s\n", evasion)
-			}
-		}
-	}
-}
+// 	fmt.Printf("\nIs Base64 encoding applicable to SQL injection? %t\n",
+// 		IsEvasionApplicable("sqli", "Base64Variants"))
 
-// Example function showing how to use the evasion mapping
-func ExampleUsage() {
-	fmt.Println("\nExample: Evasions for XSS payloads:")
-	if evasions, exists := GetEvasionsForPayload("xss"); exists {
-		for _, evasion := range evasions {
-			fmt.Printf("- %s\n", evasion)
-		}
-	}
+// 	exampleSqliPayload := "; 1 == 1"
+// 	level := constants.Medium
 
-	fmt.Printf("\nIs Base64 encoding applicable to SQL injection? %t\n",
-		IsEvasionApplicable("sqli", "Base64Variants"))
+// 	fmt.Printf("\nOriginal payload: %s\n", exampleSqliPayload)
+// 	fmt.Printf("Applying evasions at level %s:\n", level)
 
-	exampleSqliPayload := "; 1 == 1"
-	level := constants.Medium
+// 	results := ApplyEvasionsToPayload(exampleSqliPayload, "sqli", level)
+// 	for evasionType, variants := range results {
+// 		fmt.Printf("- %s:\n", evasionType)
+// 		for i, variant := range variants {
+// 			fmt.Printf("  %d: %s\n", i+1, variant)
+// 		}
+// 	}
 
-	fmt.Printf("\nOriginal payload: %s\n", exampleSqliPayload)
-	fmt.Printf("Applying evasions at level %s:\n", level)
+// 	testPayload := "<script>alert('xss')</script>"
+// 	variants, err := ApplyEvasion(testPayload, "HTMLVariants", constants.Advanced)
+// 	if err != nil {
+// 		fmt.Printf("Error: %v\n", err)
+// 		return
+// 	}
 
-	results := ApplyEvasionsToPayload(exampleSqliPayload, "sqli", level)
-	for evasionType, variants := range results {
-		fmt.Printf("- %s:\n", evasionType)
-		for i, variant := range variants {
-			fmt.Printf("  %d: %s\n", i+1, variant)
-		}
-	}
-
-	testPayload := "<script>alert('xss')</script>"
-	variants, err := ApplyEvasion(testPayload, "HTMLVariants", constants.Advanced)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	fmt.Printf("\nOriginal: %s\n", testPayload)
-	fmt.Printf("HTML variants (level %s):\n", constants.Advanced)
-	for i, variant := range variants {
-		fmt.Printf("%d: %s\n", i+1, variant)
-	}
-}
+// 	fmt.Printf("\nOriginal: %s\n", testPayload)
+// 	fmt.Printf("HTML variants (level %s):\n", constants.Advanced)
+// 	for i, variant := range variants {
+// 		fmt.Printf("%d: %s\n", i+1, variant)
+// 	}
+// }

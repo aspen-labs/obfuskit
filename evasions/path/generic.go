@@ -3,16 +3,16 @@ package path
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/constants"
 	"obfuskit/evasions"
+	"obfuskit/types"
 	"strings"
 )
 
 // PathTraversalVariants generates various path traversal evasion techniques
 // based on the specified obfuscation level
-func PathTraversalVariants(path string, level constants.Level) []string {
+func PathTraversalVariants(path string, level types.EvasionLevel) []string {
 	var variants []string
-	
+
 	// Safety function to catch panics in individual evasion functions
 	safeApply := func(fn func(string) string, input string) string {
 		defer func() {
@@ -23,7 +23,7 @@ func PathTraversalVariants(path string, level constants.Level) []string {
 		}()
 		return fn(input)
 	}
-	
+
 	safeApplyMultiple := func(fn func(string) []string, input string) []string {
 		defer func() {
 			if r := recover(); r != nil {
@@ -52,7 +52,7 @@ func PathTraversalVariants(path string, level constants.Level) []string {
 	variants = append(variants, nullResults...)
 
 	// Return basic variants if level is Basic
-	if level == constants.Basic {
+	if level == types.EvasionLevelBasic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -77,7 +77,7 @@ func PathTraversalVariants(path string, level constants.Level) []string {
 	)
 
 	// Return medium variants if level is Medium
-	if level == constants.Medium {
+	if level == types.EvasionLevelMedium {
 		return evasions.UniqueStrings(variants)
 	}
 

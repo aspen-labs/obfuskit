@@ -11,151 +11,150 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
-	"obfuskit/constants"
 	"obfuskit/evasions/command"
 	"obfuskit/evasions/encoders"
 	"obfuskit/evasions/path"
+	"obfuskit/types"
 )
 
-var EvasionFunctions = map[string]func(string, constants.Level) []string{
-	"Base64Variants": func(payload string, level constants.Level) []string {
+var EvasionFunctions = map[types.PayloadEncoding]func(string, types.EvasionLevel) []string{
+	types.PayloadEncodingBase64: func(payload string, level types.EvasionLevel) []string {
 		return encoders.Base64Variants(payload, level)
 	},
-	"BestFitVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingBestFit: func(payload string, level types.EvasionLevel) []string {
 		return encoders.BestFitVariants(payload, level)
 	},
-	"HexVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingHex: func(payload string, level types.EvasionLevel) []string {
 		return encoders.HexVariants(payload, level)
 	},
-	"HTMLVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingHTML: func(payload string, level types.EvasionLevel) []string {
 		return encoders.HTMLVariants(payload, level)
 	},
-	"OctalVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingOctal: func(payload string, level types.EvasionLevel) []string {
 		return encoders.OctalVariants(payload, level)
 	},
-	"UnicodeVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingUnicode: func(payload string, level types.EvasionLevel) []string {
 		return encoders.UnicodeVariants(payload, level)
 	},
-	"UnixCmdVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingUnixCmd: func(payload string, level types.EvasionLevel) []string {
 		return command.UnixCmdVariants(payload, level)
 	},
-	"WindowsCmdVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingWindowsCmd: func(payload string, level types.EvasionLevel) []string {
 		return command.WindowsCmdVariants(payload, level)
 	},
-	"PathTraversalVariants": func(payload string, level constants.Level) []string {
+	types.PayloadEncodingPathTraversal: func(payload string, level types.EvasionLevel) []string {
 		return path.PathTraversalVariants(payload, level)
 	},
+	// TODO: Add more evasion functions
+	// Pending URL, DoubleURL, MixedCase, UTF8
 }
 
-var PayloadEvasionMap = map[string][]string{
-	"xss": {
-		"HTMLVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
-		// "XSSVariants",
+var PayloadEvasionMap = map[types.AttackType][]types.PayloadEncoding{
+	types.AttackTypeXSS: {
+		types.PayloadEncodingHTML,
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
 	},
-	"sqli": {
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
+	types.AttackTypeSQLI: {
+		types.PayloadEncodingUnixCmd,
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
 	},
-	"unixcmdi": {
-		"UnixCmdVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
-		"PathTraversalVariants",
+	types.AttackTypeUnixCMDI: {
+		types.PayloadEncodingUnixCmd,
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
+		types.PayloadEncodingPathTraversal,
 	},
-	"wincmdi": {
-		"WindowsCmdVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
-		"PathTraversalVariants",
+	types.AttackTypeWinCMDI: {
+		types.PayloadEncodingWindowsCmd,
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
+		types.PayloadEncodingPathTraversal,
 	},
-	"path": {
-		"PathTraversalVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
+	types.AttackTypePath: {
+		types.PayloadEncodingPathTraversal,
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
 	},
-	"fileaccess": {
-		"PathTraversalVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
+	types.AttackTypeFileAccess: {
+		types.PayloadEncodingPathTraversal,
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
 	},
-	"ldapi": {
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
+	types.AttackTypeLDAP: {
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
 	},
-	"generic": {
-		"HTMLVariants",
-		"UnicodeVariants",
-		"HexVariants",
-		"OctalVariants",
-		"Base64Variants",
-		"BestFitVariants",
-		"UnixCmdVariants",
-		"WindowsCmdVariants",
-		"PathTraversalVariants",
-		"FileAccessVariants",
-		"LDAPVariants",
-		"SSRFVariants",
-		"XXEVariants",
+	types.AttackTypeGeneric: {
+		types.PayloadEncodingHTML,
+		types.PayloadEncodingUnicode,
+		types.PayloadEncodingHex,
+		types.PayloadEncodingOctal,
+		types.PayloadEncodingBase64,
+		types.PayloadEncodingBestFit,
+		types.PayloadEncodingUnixCmd,
+		types.PayloadEncodingWindowsCmd,
+		types.PayloadEncodingPathTraversal,
 	},
 }
 
-var EvasionCategories = map[string]string{
-	"HTMLVariants":          "encoder",
-	"UnicodeVariants":       "encoder",
-	"HexVariants":           "encoder",
-	"OctalVariants":         "encoder",
-	"Base64Variants":        "encoder",
-	"BestFitVariants":       "encoder",
-	"UnixCmdVariants":       "command",
-	"WindowsCmdVariants":    "command",
-	"PathTraversalVariants": "path",
-	// "XSSVariants":           "xss",
+var EvasionCategoryMap = map[types.PayloadEncoding]types.EvasionCategory{
+	types.PayloadEncodingHTML:          types.EvasionCategoryEncoder,
+	types.PayloadEncodingUnicode:       types.EvasionCategoryEncoder,
+	types.PayloadEncodingHex:           types.EvasionCategoryEncoder,
+	types.PayloadEncodingOctal:         types.EvasionCategoryEncoder,
+	types.PayloadEncodingBase64:        types.EvasionCategoryEncoder,
+	types.PayloadEncodingBestFit:       types.EvasionCategoryEncoder,
+	types.PayloadEncodingURL:           types.EvasionCategoryEncoder,
+	types.PayloadEncodingDoubleURL:     types.EvasionCategoryEncoder,
+	types.PayloadEncodingMixedCase:     types.EvasionCategoryEncoder,
+	types.PayloadEncodingUTF8:          types.EvasionCategoryEncoder,
+	types.PayloadEncodingUnixCmd:       types.EvasionCategoryCommand,
+	types.PayloadEncodingWindowsCmd:    types.EvasionCategoryCommand,
+	types.PayloadEncodingPathTraversal: types.EvasionCategoryPath,
 }
 
-func GetEvasionsForPayload(payloadType string) ([]string, bool) {
-	evasions, exists := PayloadEvasionMap[payloadType]
+func GetEvasionsForPayload(attackType types.AttackType) ([]types.PayloadEncoding, bool) {
+	evasions, exists := PayloadEvasionMap[attackType]
 	return evasions, exists
 }
 
-func GetEvasionsByCategory(payloadType string) map[string][]string {
-	evasions, exists := PayloadEvasionMap[payloadType]
+func GetEvasionsByCategory(attackType types.AttackType) map[types.EvasionCategory][]types.PayloadEncoding {
+	evasions, exists := PayloadEvasionMap[attackType]
 	if !exists {
 		return nil
 	}
-
-	categorized := make(map[string][]string)
+	categorized := make(map[types.EvasionCategory][]types.PayloadEncoding)
 	for _, evasion := range evasions {
-		category := EvasionCategories[evasion]
+		category := EvasionCategoryMap[evasion]
 		categorized[category] = append(categorized[category], evasion)
 	}
-
 	return categorized
 }
 
-func IsEvasionApplicable(payloadType, evasionType string) bool {
+func IsEvasionApplicable(payloadType types.AttackType, evasionType types.PayloadEncoding) bool {
 	evasions, exists := PayloadEvasionMap[payloadType]
 	if !exists {
 		return false
@@ -169,7 +168,7 @@ func IsEvasionApplicable(payloadType, evasionType string) bool {
 	return false
 }
 
-func ApplyEvasion(payload, evasionType string, level constants.Level) ([]string, error) {
+func ApplyEvasion(payload string, evasionType types.PayloadEncoding, level types.EvasionLevel) ([]string, error) {
 	if payload == "" {
 		return nil, nil
 	}
@@ -188,17 +187,17 @@ func ApplyEvasion(payload, evasionType string, level constants.Level) ([]string,
 	return evasionFunc(payload, level), nil
 }
 
-func ApplyEvasionsToPayload(payload, payloadType string, level constants.Level) map[string][]string {
-	if payload == "" || payloadType == "" {
+func ApplyEvasionsToPayload(payload string, attackType types.AttackType, level types.EvasionLevel) map[types.PayloadEncoding][]string {
+	if payload == "" || attackType == "" {
 		return nil
 	}
 
-	evasions, exists := GetEvasionsForPayload(payloadType)
+	evasions, exists := GetEvasionsForPayload(attackType)
 	if !exists {
 		return nil
 	}
 
-	results := make(map[string][]string, len(evasions))
+	results := make(map[types.PayloadEncoding][]string, len(evasions))
 	for _, evasionType := range evasions {
 		variants, err := ApplyEvasion(payload, evasionType, level)
 		if err != nil {
@@ -213,34 +212,28 @@ func ApplyEvasionsToPayload(payload, payloadType string, level constants.Level) 
 	return results
 }
 
-func GetAllPayloadTypes() []string {
-	types := make([]string, 0, len(PayloadEvasionMap))
+func GetAllAttackTypes() []types.AttackType {
+	types := make([]types.AttackType, 0, len(PayloadEvasionMap))
 	for payloadType := range PayloadEvasionMap {
 		types = append(types, payloadType)
 	}
-	sort.Strings(types)
+	sort.Slice(types, func(i, j int) bool {
+		return types[i] < types[j]
+	})
 	return types
 }
 
 func PrintPayloadEvasionMap() {
-	payloadTypes := GetAllPayloadTypes()
+	attackTypes := GetAllAttackTypes()
 
 	fmt.Println("Payload to Evasions Mapping:")
 	fmt.Println("============================")
 
-	for _, payloadType := range payloadTypes {
-		fmt.Printf("\n%s:\n", payloadType)
-		categorized := GetEvasionsByCategory(payloadType)
+	for _, attackType := range attackTypes {
+		fmt.Printf("\n%s:\n", attackType)
+		categorized := GetEvasionsByCategory(attackType)
 
-		categories := make([]string, 0, len(categorized))
-		for category := range categorized {
-			categories = append(categories, category)
-		}
-		sort.Strings(categories)
-
-		for _, category := range categories {
-			evasions := categorized[category]
-			sort.Strings(evasions)
+		for category, evasions := range categorized {
 			fmt.Printf("  %s:\n", category)
 			for _, evasion := range evasions {
 				fmt.Printf("    - %s\n", evasion)
@@ -251,18 +244,19 @@ func PrintPayloadEvasionMap() {
 
 // UI Types and structures
 type item struct {
-	title, desc string
+	title any
+	desc  string
 }
 
-func (i item) Title() string       { return i.title }
+func (i item) Title() string       { return i.title.(string) }
 func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title }
+func (i item) FilterValue() string { return i.title.(string) }
 
 var (
 	mainMenuItems = []list.Item{
-		item{"Generate Payloads", "Generate and view possible attack payloads"},
-		item{"Send to URL", "Generate payloads and send them to a test URL"},
-		item{"Use Existing Payloads", "Give a path or enter a list of payloads"},
+		item{types.ActionGeneratePayloads, "Generate and view possible attack payloads"},
+		item{types.ActionSendToURL, "Generate payloads and send them to a test URL"},
+		item{types.ActionUseExistingPayloads, "Give a path or enter a list of payloads"},
 	}
 
 	attackItems = []list.Item{
@@ -271,13 +265,13 @@ var (
 	}
 
 	specificAttackItems = []list.Item{
-		item{"XSS", "Cross Site Scripting"},
-		item{"SQLi", "SQL Injection"},
-		item{"LFI", "Local File Inclusion"},
-		item{"RFI", "Remote File Inclusion"},
-		item{"Command Injection", "OS Command Injection"},
-		item{"SSRF", "Server-Side Request Forgery"},
-		item{"XXE", "XML External Entity"},
+		item{types.AttackTypeXSS, "Cross Site Scripting"},
+		item{types.AttackTypeSQLI, "SQL Injection"},
+		item{types.AttackTypeUnixCMDI, "Local File Inclusion"},
+		item{types.AttackTypeWinCMDI, "Remote File Inclusion"},
+		item{types.AttackTypeOsCMDI, "OS Command Injection"},
+		item{types.AttackTypeSSRF, "Server-Side Request Forgery"},
+		item{types.AttackTypeXXE, "XML External Entity"},
 	}
 
 	payloadItems = []list.Item{
@@ -286,31 +280,31 @@ var (
 	}
 
 	specificPayloadItems = []list.Item{
-		item{"Encodings", "Generate payloads with various encodings"},
-		item{"Paths", "Generate payloads with various path structures"},
-		item{"Commands", "Generate payloads with various command structures"},
+		item{types.PayloadMethodEncodings, "Generate payloads with various encodings"},
+		item{types.PayloadMethodFile, "Generate payloads with various path structures"},
+		item{types.PayloadMethodEnterManually, "Generate payloads with various command structures"},
 	}
 
 	encodingItems = []list.Item{
-		item{"URL Encoding", "Encode payloads using URL encoding (%20, %3C, etc.)"},
-		item{"HTML Entity", "Encode payloads using HTML entities (&lt;, &gt;, etc.)"},
-		item{"Unicode", "Encode payloads using Unicode escape sequences"},
-		item{"Base64", "Encode payloads using Base64 encoding"},
-		item{"Hex", "Encode payloads using hexadecimal encoding"},
-		item{"Double URL", "Apply URL encoding twice"},
-		item{"Mixed Case", "Use mixed case characters in payloads"},
-		item{"UTF-8", "Use UTF-8 byte sequences"},
+		item{types.PayloadEncodingURL, "Encode payloads using URL encoding (%20, %3C, etc.)"},
+		item{types.PayloadEncodingHTML, "Encode payloads using HTML entities (&lt;, &gt;, etc.)"},
+		item{types.PayloadEncodingUnicode, "Encode payloads using Unicode escape sequences"},
+		item{types.PayloadEncodingBase64, "Encode payloads using Base64 encoding"},
+		item{types.PayloadEncodingHex, "Encode payloads using hexadecimal encoding"},
+		item{types.PayloadEncodingDoubleURL, "Apply URL encoding twice"},
+		item{types.PayloadEncodingMixedCase, "Use mixed case characters in payloads"},
+		item{types.PayloadEncodingUTF8, "Use UTF-8 byte sequences"},
 	}
 
 	evasionLevelItems = []list.Item{
-		item{"Basic", "Use simple evasion techniques (fastest, fewer variants)"},
-		item{"Medium", "Use moderate evasion techniques (balanced approach)"},
-		item{"Advanced", "Use all available evasion techniques (comprehensive, more variants)"},
+		item{types.EvasionLevelBasic, "Use simple evasion techniques (fastest, fewer variants)"},
+		item{types.EvasionLevelMedium, "Use moderate evasion techniques (balanced approach)"},
+		item{types.EvasionLevelAdvanced, "Use all available evasion techniques (comprehensive, more variants)"},
 	}
 
 	payloadSourceItems = []list.Item{
-		item{"From File", "Load payloads from a text file"},
-		item{"Enter Manually", "Enter payloads manually in the terminal"},
+		item{types.PayloadSourceFromFile, "Load payloads from a text file"},
+		item{types.PayloadSourceEnterManually, "Enter payloads manually in the terminal"},
 	}
 
 	targetItems = []list.Item{
@@ -320,15 +314,16 @@ var (
 
 	reportItems = []list.Item{
 		item{"I'll pick", "Choose a specific report format"},
-		item{"All", "Generate reports in all available formats"},
+		item{types.ReportTypeAll, "Generate reports in all available formats"},
 	}
 
 	specificReportItems = []list.Item{
-		item{"HTML", "Generate a formatted HTML Report"},
-		item{"Pretty Terminal", "Generate a formatted report in the terminal"},
-		item{"PDF", "Generate a PDF document report"},
-		item{"CSV", "Generate data in CSV format"},
-		item{"Nuclei Templates", "Generate nuclei YAML templates for automated scanning"},
+		item{types.ReportTypeHTML, "Generate a formatted HTML Report"},
+		item{types.ReportTypePretty, "Generate a formatted report in the terminal"},
+		item{types.ReportTypePDF, "Generate a PDF document report"},
+		item{types.ReportTypeCSV, "Generate data in CSV format"},
+		item{types.ReportTypeNuclei, "Generate nuclei YAML templates for automated scanning"},
+		item{types.ReportTypeJSON, "Generate data in JSON format"},
 	}
 )
 
@@ -346,7 +341,7 @@ const (
 	stateChoosePayloadSource
 	stateEnterFilePath
 	stateEnterPayloads
-	stateChooseTarget
+	stateChooseTargetMethod
 	stateEnterURL
 	stateChooseReportMethod
 	stateChooseSpecificReport
@@ -358,16 +353,16 @@ type Model struct {
 	list                  list.Model
 	textInput             textinput.Model
 	current               state
-	Selection             string
-	SelectedAttack        string
-	SelectedPayload       string
-	SelectedEncoding      string
-	SelectedEvasionLevel  string
-	SelectedPayloadSource string
+	SelectedAction        types.Action
+	SelectedAttackType    types.AttackType
+	SelectedPayloadMethod types.PayloadMethod
+	SelectedEncoding      types.PayloadEncoding
+	SelectedEvasionLevel  types.EvasionLevel
+	SelectedPayloadSource types.PayloadSource
 	CustomPayloads        []string
 	PayloadFilePath       string
-	SelectedTarget        string
-	SelectedReportType    string
+	SelectedTargetMethod  types.TargetMethod
+	SelectedReportType    types.ReportType
 	URL                   string
 	ready                 bool
 	autoAttack            bool
@@ -425,7 +420,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.PayloadFilePath = value
 						m.list.SetItems(targetItems)
 						m.list.Title = "Choose target method:"
-						m.current = stateChooseTarget
+						m.current = stateChooseTargetMethod
 					case stateEnterPayloads:
 						if !m.isEnteringPayloads {
 							// First payload entered, switch to multi-line mode
@@ -437,7 +432,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							// Finished entering payloads
 							m.list.SetItems(targetItems)
 							m.list.Title = "Choose target method:"
-							m.current = stateChooseTarget
+							m.current = stateChooseTargetMethod
 						} else {
 							// Add another payload
 							m.CustomPayloads = append(m.CustomPayloads, value)
@@ -451,7 +446,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case stateEnterURL:
 					m.list.SetItems(targetItems)
 					m.list.Title = "Choose target method:"
-					m.current = stateChooseTarget
+					m.current = stateChooseTargetMethod
 				case stateEnterFilePath, stateEnterPayloads:
 					m.list.SetItems(payloadSourceItems)
 					m.list.Title = "How do you want to provide payloads?"
@@ -492,10 +487,10 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 	switch m.current {
 	case stateMainMenu:
 		selected := m.list.SelectedItem().(item).title
-		m.Selection = selected
+		m.SelectedAction = selected.(types.Action)
 
 		// Handle "Use Existing Payloads" differently
-		if selected == "Use Existing Payloads" {
+		if selected == types.ActionUseExistingPayloads {
 			m.list.SetItems(payloadSourceItems)
 			m.list.Title = "How do you want to provide payloads?"
 			m.current = stateChoosePayloadSource
@@ -513,14 +508,14 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 			m.current = stateChooseSpecificAttack
 		} else {
 			m.autoAttack = true
-			m.SelectedAttack = "All"
+			m.SelectedAttackType = types.AttackTypeGeneric
 			m.list.SetItems(payloadItems)
 			m.list.Title = "Choose payload method:"
 			m.current = stateChoosePayloadMethod
 		}
 
 	case stateChooseSpecificAttack:
-		m.SelectedAttack = m.list.SelectedItem().(item).title
+		m.SelectedAttackType = m.list.SelectedItem().(item).title.(types.AttackType)
 		m.list.SetItems(payloadItems)
 		m.list.Title = "Choose payload evasion method:"
 		m.current = stateChoosePayloadMethod
@@ -533,9 +528,9 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 			m.current = stateChooseSpecificPayload
 		} else {
 			m.autoPayload = true
-			m.SelectedPayload = "All"
+			m.SelectedPayloadMethod = types.PayloadMethodAuto
 			// Set default payload source when auto-selecting
-			m.SelectedPayloadSource = "Generated"
+			m.SelectedPayloadSource = types.PayloadSourceGenerated
 			// Always go through evasion level selection
 			m.list.SetItems(evasionLevelItems)
 			m.list.Title = "Choose evasion level:"
@@ -544,9 +539,9 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 
 	case stateChooseSpecificPayload:
 		selected := m.list.SelectedItem().(item).title
-		m.SelectedPayload = selected
+		m.SelectedPayloadMethod = selected.(types.PayloadMethod)
 
-		if selected == "Encodings" {
+		if selected == types.PayloadMethodEncodings {
 			// Show encoding options
 			m.list.SetItems(encodingItems)
 			m.list.Title = "Choose encoding method:"
@@ -559,18 +554,18 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 		}
 
 	case stateChooseEncoding:
-		m.SelectedEncoding = m.list.SelectedItem().(item).title
+		m.SelectedEncoding = m.list.SelectedItem().(item).title.(types.PayloadEncoding)
 		m.list.SetItems(evasionLevelItems)
 		m.list.Title = "Choose evasion level:"
 		m.current = stateChooseEvasionLevel
 
 	case stateChooseEvasionLevel:
-		m.SelectedEvasionLevel = m.list.SelectedItem().(item).title
+		m.SelectedEvasionLevel = m.list.SelectedItem().(item).title.(types.EvasionLevel)
 		if m.autoPayload {
 			// In auto payload mode, go directly to target selection
 			m.list.SetItems(targetItems)
 			m.list.Title = "Choose target method:"
-			m.current = stateChooseTarget
+			m.current = stateChooseTargetMethod
 		} else {
 			// In manual payload mode, go to payload source selection
 			m.list.SetItems(payloadSourceItems)
@@ -580,9 +575,9 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 
 	case stateChoosePayloadSource:
 		selected := m.list.SelectedItem().(item).title
-		m.SelectedPayloadSource = selected
+		m.SelectedPayloadSource = selected.(types.PayloadSource)
 
-		if selected == "From File" {
+		if selected == types.PayloadSourceFromFile {
 			m.textInput.Placeholder = "Enter file path (e.g., payloads.txt)"
 			m.textInput.SetValue("")
 			m.current = stateEnterFilePath
@@ -594,12 +589,12 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 			m.current = stateEnterPayloads
 		}
 
-	case stateChooseTarget:
+	case stateChooseTargetMethod:
 		if m.list.SelectedItem().(item).title == "Specify URL" {
-			m.SelectedTarget = "URL"
+			m.SelectedTargetMethod = types.TargetMethodURL
 			m.current = stateEnterURL
 		} else {
-			m.SelectedTarget = "File"
+			m.SelectedTargetMethod = types.TargetMethodFile
 			m.URL = "output.txt"
 			m.list.SetItems(reportItems)
 			m.list.Title = "Choose report format:"
@@ -620,7 +615,7 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 		}
 
 	case stateChooseSpecificReport:
-		m.SelectedReportType = m.list.SelectedItem().(item).title
+		m.SelectedReportType = m.list.SelectedItem().(item).title.(types.ReportType)
 		m.current = stateDone
 		return m, tea.Quit
 	}
@@ -650,11 +645,11 @@ func (m Model) handleEscKey() (tea.Model, tea.Cmd) {
 		}
 	case stateChoosePayloadSource:
 		// Handle back navigation from payload source selection
-		if m.Selection == "Use Existing Payloads" {
+		if m.SelectedAction == types.ActionUseExistingPayloads {
 			m.list.SetItems(mainMenuItems)
 			m.list.Title = "Select what you want to do:"
 			m.current = stateMainMenu
-		} else if m.SelectedPayload == "Encodings" {
+		} else if m.SelectedPayloadMethod == types.PayloadMethodEncodings {
 			m.list.SetItems(encodingItems)
 			m.list.Title = "Choose encoding method:"
 			m.current = stateChooseEncoding
@@ -717,9 +712,9 @@ Configuration Summary:
 Main Action    : %s
 Attack Type    : %s %s
 Evasion Method : %s %s`,
-			m.Selection,
-			m.SelectedAttack, autoString(m.autoAttack),
-			m.SelectedPayload, autoString(m.autoPayload))
+			string(m.SelectedAction),
+			string(m.SelectedAttackType), autoString(m.autoAttack),
+			string(m.SelectedPayloadMethod), autoString(m.autoPayload))
 
 		if m.SelectedEncoding != "" {
 			summary += fmt.Sprintf("\nEncoding       : %s", m.SelectedEncoding)
@@ -731,9 +726,9 @@ Evasion Method : %s %s`,
 
 		if m.SelectedPayloadSource != "" {
 			summary += fmt.Sprintf("\nPayload Source : %s", m.SelectedPayloadSource)
-			if m.SelectedPayloadSource == "From File" && m.PayloadFilePath != "" {
+			if m.SelectedPayloadSource == types.PayloadSourceFromFile && m.PayloadFilePath != "" {
 				summary += fmt.Sprintf(" (%s)", m.PayloadFilePath)
-			} else if m.SelectedPayloadSource == "Enter Manually" && len(m.CustomPayloads) > 0 {
+			} else if m.SelectedPayloadSource == types.PayloadSourceEnterManually && len(m.CustomPayloads) > 0 {
 				summary += fmt.Sprintf(" (%d payloads)", len(m.CustomPayloads))
 			}
 		}
@@ -743,8 +738,8 @@ Target         : %s (%s)
 Report Type    : %s %s
 
 Press any key to exit...`,
-			m.SelectedTarget, m.URL,
-			m.SelectedReportType, autoString(m.autoReport))
+			string(m.SelectedTargetMethod), m.URL,
+			string(m.SelectedReportType), autoString(m.autoReport))
 
 		return summary
 	default:
@@ -790,9 +785,9 @@ func displayFinalConfiguration(m Model) {
 		fmt.Println("\n" + strings.Repeat("=", 50))
 		fmt.Println("FINAL CONFIGURATION")
 		fmt.Println(strings.Repeat("=", 50))
-		fmt.Printf("Main Action    : %s\n", m.Selection)
-		fmt.Printf("Attack Type    : %s %s\n", m.SelectedAttack, autoString(m.autoAttack))
-		fmt.Printf("Evasion Method : %s %s\n", m.SelectedPayload, autoString(m.autoPayload))
+		fmt.Printf("Main Action    : %s\n", m.SelectedAction)
+		fmt.Printf("Attack Type    : %s %s\n", m.SelectedAttackType, autoString(m.autoAttack))
+		fmt.Printf("Evasion Method : %s %s\n", m.SelectedPayloadMethod, autoString(m.autoPayload))
 
 		if m.SelectedEncoding != "" {
 			fmt.Printf("Encoding       : %s\n", m.SelectedEncoding)
@@ -804,9 +799,9 @@ func displayFinalConfiguration(m Model) {
 
 		if m.SelectedPayloadSource != "" {
 			fmt.Printf("Payload Source : %s", m.SelectedPayloadSource)
-			if m.SelectedPayloadSource == "From File" && m.PayloadFilePath != "" {
+			if m.SelectedPayloadSource == types.PayloadSourceFromFile && m.PayloadFilePath != "" {
 				fmt.Printf(" (%s)", m.PayloadFilePath)
-			} else if m.SelectedPayloadSource == "Enter Manually" && len(m.CustomPayloads) > 0 {
+			} else if m.SelectedPayloadSource == types.PayloadSourceEnterManually && len(m.CustomPayloads) > 0 {
 				fmt.Printf(" (%d payloads)", len(m.CustomPayloads))
 			}
 			fmt.Println()
@@ -819,7 +814,7 @@ func displayFinalConfiguration(m Model) {
 			}
 		}
 
-		fmt.Printf("Target         : %s (%s)\n", m.SelectedTarget, m.URL)
+		fmt.Printf("Target         : %s (%s)\n", m.SelectedTargetMethod, m.URL)
 		fmt.Printf("Report Type    : %s %s\n", m.SelectedReportType, autoString(m.autoReport))
 		fmt.Println(strings.Repeat("=", 50))
 	}
@@ -871,28 +866,28 @@ func (e ValidationError) Error() string {
 }
 
 func ValidateSelection(m Model) error {
-	if m.Selection == "" {
-		return ValidationError{Field: "Selection", Message: "main action is required"}
+	if m.SelectedAction == "" {
+		return ValidationError{Field: "SelectedAction", Message: "main action is required"}
 	}
 
-	if m.Selection == "Use Existing Payloads" {
+	if m.SelectedAction == types.ActionUseExistingPayloads {
 		if m.SelectedPayloadSource == "" {
 			return ValidationError{Field: "SelectedPayloadSource", Message: "payload source is required"}
 		}
-		if m.SelectedPayloadSource == "From File" && strings.TrimSpace(m.PayloadFilePath) == "" {
+		if m.SelectedPayloadSource == types.PayloadSourceFromFile && strings.TrimSpace(m.PayloadFilePath) == "" {
 			return ValidationError{Field: "PayloadFilePath", Message: "file path is required when using file source"}
 		}
-		if m.SelectedPayloadSource == "Enter Manually" && len(m.CustomPayloads) == 0 {
+		if m.SelectedPayloadSource == types.PayloadSourceEnterManually && len(m.CustomPayloads) == 0 {
 			return ValidationError{Field: "CustomPayloads", Message: "at least one payload is required when entering manually"}
 		}
 	} else {
-		if m.SelectedAttack == "" {
-			return ValidationError{Field: "SelectedAttack", Message: "attack type is required"}
+		if m.SelectedAttackType == "" {
+			return ValidationError{Field: "SelectedAttackType", Message: "attack type is required"}
 		}
-		if m.SelectedPayload == "" {
-			return ValidationError{Field: "SelectedPayload", Message: "payload method is required"}
+		if m.SelectedPayloadMethod == "" {
+			return ValidationError{Field: "SelectedPayloadMethod", Message: "payload method is required"}
 		}
-		if m.SelectedPayload == "Encodings" && m.SelectedEncoding == "" {
+		if m.SelectedPayloadMethod == types.PayloadMethodEncodings && m.SelectedEncoding == "" {
 			return ValidationError{Field: "SelectedEncoding", Message: "encoding method is required when using encodings"}
 		}
 
@@ -907,10 +902,10 @@ func ValidateSelection(m Model) error {
 		}
 	}
 
-	if m.SelectedTarget == "" {
-		return ValidationError{Field: "SelectedTarget", Message: "target method is required"}
+	if m.SelectedTargetMethod == "" {
+		return ValidationError{Field: "SelectedTargetMethod", Message: "target method is required"}
 	}
-	if m.SelectedTarget == "URL" && strings.TrimSpace(m.URL) == "" {
+	if m.SelectedTargetMethod == types.TargetMethodURL && strings.TrimSpace(m.URL) == "" {
 		return ValidationError{Field: "URL", Message: "URL is required when target method is URL"}
 	}
 	if m.SelectedReportType == "" {

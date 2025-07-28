@@ -12,7 +12,7 @@ import (
 	"obfuskit/internal/payload"
 	"obfuskit/internal/report"
 	"obfuskit/internal/server"
-	"obfuskit/internal/util"
+	"obfuskit/types"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 
 	// Start integration webservice if requested
 	if *serverFlag {
-		var config *cmd.Config
+		var config *types.Config
 		if *configFlag != "" {
 			var configErr error
 			config, configErr = cmd.LoadConfig(*configFlag)
@@ -68,7 +68,7 @@ func main() {
 		return
 	}
 
-	var config *cmd.Config
+	var config *types.Config
 	var configErr error
 	if *configFlag != "" {
 		config, configErr = cmd.LoadConfig(*configFlag)
@@ -87,17 +87,17 @@ func main() {
 	}
 
 	// Use evasion level from config (default to Medium if not set)
-	evasionLevel := util.ParseEvasionLevel(config.Evasion.Level)
+	evasionLevel := config.EvasionLevel
 
 	fmt.Println("\n==============================")
 	fmt.Println("CONFIGURATION SUMMARY")
 	fmt.Println("==============================")
 	fmt.Printf("Action: %s\n", config.Action)
-	fmt.Printf("Attack: %s\n", config.Attack.Type)
+	fmt.Printf("Attack: %s\n", config.AttackType)
 	fmt.Printf("Payload: %s\n", config.Payload.Method)
-	fmt.Printf("Evasion Level: %s\n", config.Evasion.Level)
+	fmt.Printf("Evasion Level: %s\n", config.EvasionLevel)
 	fmt.Printf("Target: %s\n", config.Target.Method)
-	fmt.Printf("Report: %s\n", config.Report.Type)
+	fmt.Printf("Report: %s\n", config.ReportType)
 	fmt.Printf("URL: %s\n", config.Target.URL)
 	fmt.Println("==============================")
 
@@ -108,11 +108,11 @@ func main() {
 
 	var err error
 	switch config.Action {
-	case "Generate Payloads":
+	case types.ActionGeneratePayloads:
 		err = payload.HandleGeneratePayloads(results, evasionLevel)
-	case "Send to URL":
+	case types.ActionSendToURL:
 		err = payload.HandleSendToURL(results, evasionLevel)
-	case "Use Existing Payloads":
+	case types.ActionUseExistingPayloads:
 		err = payload.HandleExistingPayloads(results, evasionLevel)
 	default:
 		err = fmt.Errorf("unknown action: %s", config.Action)

@@ -3,15 +3,15 @@ package command
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/constants"
 	"obfuskit/evasions"
+	"obfuskit/types"
 	"regexp"
 	"strings"
 )
 
 // WindowsCmdVariants generates various Windows command evasion techniques
 // based on the specified obfuscation level
-func WindowsCmdVariants(payload string, level constants.Level) []string {
+func WindowsCmdVariants(payload string, level types.EvasionLevel) []string {
 	var variants []string
 
 	// Basic evasion techniques
@@ -31,7 +31,7 @@ func WindowsCmdVariants(payload string, level constants.Level) []string {
 	)
 
 	// Return basic variants if level is Basic
-	if level == constants.Basic {
+	if level == types.EvasionLevelBasic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -50,7 +50,7 @@ func WindowsCmdVariants(payload string, level constants.Level) []string {
 	)
 
 	// Return medium variants if level is Medium
-	if level == constants.Medium {
+	if level == types.EvasionLevelMedium {
 		return evasions.UniqueStrings(variants)
 	}
 

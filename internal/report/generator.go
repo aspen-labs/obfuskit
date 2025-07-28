@@ -1,17 +1,13 @@
 package report
 
 import (
-	"obfuskit/internal/model"
-)
-
-import (
 	"fmt"
+	"obfuskit/constants"
+	"obfuskit/internal/model"
+	"obfuskit/report"
+	"obfuskit/types"
 	"os"
 	"strings"
-
-	"obfuskit/constants"
-	"obfuskit/report"
-	"obfuskit/cmd"
 )
 
 func GenerateSummary(results *model.TestResults) {
@@ -62,45 +58,50 @@ func GenerateSummary(results *model.TestResults) {
 func GenerateReports(results *model.TestResults) error {
 	fmt.Println("\n📊 Generating reports...")
 
-	config, ok := results.Config.(*cmd.Config)
+	config, ok := results.Config.(*types.Config)
 	if !ok {
 		return fmt.Errorf("invalid config type in TestResults")
 	}
 
-	reportTypes := []string{}
-	if config.Report.Type == "All" {
-		reportTypes = []string{"HTML", "Pretty Terminal", "PDF", "Nuclei Templates"}
+	reportTypes := []types.ReportType{}
+	if config.ReportType == types.ReportTypeAll {
+		reportTypes = []types.ReportType{
+			types.ReportTypeHTML,
+			types.ReportTypePretty,
+			types.ReportTypePDF,
+			types.ReportTypeNuclei,
+		}
 	} else {
-		reportTypes = []string{config.Report.Type}
+		reportTypes = []types.ReportType{config.ReportType}
 	}
 
 	for _, reportType := range reportTypes {
 		switch reportType {
-		case "HTML":
+		case types.ReportTypeHTML:
 			err := report.GenerateHTMLReport(results.RequestResults, "waf_test_report.html")
 			if err != nil {
 				fmt.Printf("Warning: Failed to generate HTML report: %v\n", err)
 			} else {
 				fmt.Println("✅ HTML report generated: waf_test_report.html")
 			}
-		case "Pretty Terminal":
+		case types.ReportTypePretty:
 			report.PrintTerminalReport(results.RequestResults)
 			fmt.Println("✅ Terminal report displayed above")
-		case "PDF":
+		case types.ReportTypePDF:
 			err := report.GeneratePDFReport(results.RequestResults, "waf_test_report.pdf")
 			if err != nil {
 				fmt.Printf("Warning: Failed to generate PDF report: %v\n", err)
 			} else {
 				fmt.Println("✅ PDF report generated: waf_test_report.pdf")
 			}
-		case "CSV":
+		case types.ReportTypeCSV:
 			err := GenerateCSVReport(results)
 			if err != nil {
 				fmt.Printf("Warning: Failed to generate CSV report: %v\n", err)
 			} else {
 				fmt.Println("✅ CSV report generated: waf_test_report.csv")
 			}
-		case "Nuclei Templates":
+		case types.ReportTypeNuclei:
 			err := report.GenerateNucleiTemplates(results.RequestResults, "nuclei_templates")
 			if err != nil {
 				fmt.Printf("Warning: Failed to generate nuclei templates: %v\n", err)

@@ -1,8 +1,6 @@
 {
   "action": "Send to URL",
-  "attack": {
-    "type": "xss"
-  },
+  "attack_type": "xss",
   "payload": {
     "method": "Auto",
     "encoding": "",
@@ -10,15 +8,10 @@
     "file_path": "",
     "custom": null
   },
-  "evasion": {
-    "level": "Medium"
-  },
+  "evasion_level": "Medium",
   "target": {
     "method": "URL",
     "url": "http://example.com/vulnerable-page"
   },
-  "report": {
-    "type": "HTML",
-    "auto": true
-  }
+  "report_type": "HTML"
 }

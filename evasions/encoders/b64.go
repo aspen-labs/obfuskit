@@ -2,14 +2,14 @@ package encoders
 
 import (
 	"encoding/base64"
-	"obfuskit/constants"
 	"obfuskit/evasions"
+	"obfuskit/types"
 	"strings"
 )
 
 // Base64Variants generates various base64 encoded variants of the input payload
 // based on the specified obfuscation level
-func Base64Variants(payload string, level constants.Level) []string {
+func Base64Variants(payload string, level types.EvasionLevel) []string {
 	raw := []byte(payload)
 	var variants []string
 
@@ -28,7 +28,7 @@ func Base64Variants(payload string, level constants.Level) []string {
 	)
 
 	// Return basic variants if level is Basic
-	if level == constants.Basic {
+	if level == types.EvasionLevelBasic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -41,7 +41,7 @@ func Base64Variants(payload string, level constants.Level) []string {
 	)
 
 	// Return medium variants if level is Medium
-	if level == constants.Medium {
+	if level == types.EvasionLevelMedium {
 		return evasions.UniqueStrings(variants)
 	}
 

@@ -7,14 +7,14 @@ import (
 	"net/http"
 
 	"obfuskit/cmd"
-	"obfuskit/constants"
 	"obfuskit/internal/model"
 	"obfuskit/internal/util"
+	"obfuskit/types"
 )
 
 // ServerHandler is a struct handler for Burp integration
 type ServerHandler struct {
-	Config *cmd.Config
+	Config *types.Config
 }
 
 // ServeHTTP implements http.Handler
@@ -23,13 +23,13 @@ func (h *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // ProcessServerRequestHandler handles POST requests from Burp
-func ProcessServerRequestHandler(w http.ResponseWriter, r *http.Request, config *cmd.Config) {
+func ProcessServerRequestHandler(w http.ResponseWriter, r *http.Request, config *types.Config) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST supported", http.StatusMethodNotAllowed)
 		return
 	}
-	log.Println("Received Burp request")
-	var req model.BurpRequest
+	log.Println("Received api request")
+	var req model.PayloadRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Invalid body", http.StatusBadRequest)
@@ -43,38 +43,43 @@ func ProcessServerRequestHandler(w http.ResponseWriter, r *http.Request, config 
 	attackType := util.DetectAttackType(payload)
 
 	// Load config.yaml for evasion level if available
-	level := constants.Medium // default
+	level := types.EvasionLevelMedium // default
 	if config != nil {
-		attackType = config.Attack.Type
-		level = util.ParseEvasionLevel(config.Evasion.Level)
+		attackType = config.AttackType
+		level = config.EvasionLevel
 	}
 	evasions, exists := cmd.GetEvasionsForPayload(attackType)
 	if !exists {
 		log.Println("No evasions found for attack type: ", attackType)
-		evasions = []string{"Base64Variants", "HexVariants", "UnicodeVariants"}
+		evasions = []types.PayloadEncoding{
+			types.PayloadEncodingBase64,
+			types.PayloadEncodingHex,
+			types.PayloadEncodingUnicode,
+			types.PayloadEncodingOctal,
+			types.PayloadEncodingBestFit,
+		}
 	}
 
-	var results []model.BurpEvadedPayload
+	var results []model.EvadedPayload
 	for _, evasionType := range evasions {
 		variants, err := cmd.ApplyEvasion(payload, evasionType, level)
 		if err != nil {
 			continue
 		}
 		for _, variant := range variants {
-			results = append(results, model.BurpEvadedPayload{
+			results = append(results, model.EvadedPayload{
 				OriginalPayload: payload,
-				AttackType:      attackType,
-				EvasionType:     evasionType,
-				Level:           level,
+				AttackType:      string(attackType),
+				EvasionType:     string(evasionType),
+				Level:           string(level),
 				Variant:         variant,
 			})
 		}
 	}
-	resp := model.BurpResponse{
+	resp := model.PayloadResponse{
 		Status:   "ok",
 		Payloads: results,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
-

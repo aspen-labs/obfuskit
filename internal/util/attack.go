@@ -4,42 +4,42 @@ import (
 	"fmt"
 	"strings"
 
-	"obfuskit/constants"
+	"obfuskit/types"
 )
 
 // DetectAttackType uses heuristics to guess the attack type from a payload
-func DetectAttackType(payload string) string {
+func DetectAttackType(payload string) types.AttackType {
 	payload = strings.ToLower(payload)
 	if strings.Contains(payload, "<script") || strings.Contains(payload, "javascript:") ||
 		strings.Contains(payload, "onerror") || strings.Contains(payload, "onload") {
-		return "xss"
+		return types.AttackTypeXSS
 	}
 	if strings.Contains(payload, "union") || strings.Contains(payload, "select") ||
 		strings.Contains(payload, "' or ") || strings.Contains(payload, "1=1") {
-		return "sqli"
+		return types.AttackTypeSQLI
 	}
 	if strings.Contains(payload, "../") || strings.Contains(payload, "..\\") ||
 		strings.Contains(payload, "/etc/passwd") || strings.Contains(payload, "c:\\windows") {
-		return "path"
+		return types.AttackTypePath
 	}
 	if strings.Contains(payload, "cmd") || strings.Contains(payload, "bash") ||
 		strings.Contains(payload, "powershell") || strings.Contains(payload, "wget") {
-		return "unixcmdi"
+		return types.AttackTypeUnixCMDI
 	}
-	return "generic"
+	return types.AttackTypeGeneric
 }
 
 // ParseEvasionLevel converts a string to a constants.Level
-func ParseEvasionLevel(level string) constants.Level {
+func ParseEvasionLevel(level string) types.EvasionLevel {
 	switch strings.ToLower(level) {
 	case "basic":
-		return constants.Basic
+		return types.EvasionLevelBasic
 	case "medium":
-		return constants.Medium
+		return types.EvasionLevelMedium
 	case "advanced":
-		return constants.Advanced
+		return types.EvasionLevelAdvanced
 	default:
 		fmt.Printf("Warning: Unknown evasion level '%s', using 'medium' as default\n", level)
-		return constants.Medium
+		return types.EvasionLevelMedium
 	}
 }
