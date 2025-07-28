@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"obfuskit/cmd"
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/internal/model"
 	"obfuskit/report"
 	"os"

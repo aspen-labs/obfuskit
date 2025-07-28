@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 )
 
 // DetectAttackType uses heuristics to guess the attack type from a payload

@@ -2,7 +2,7 @@ package encoders
 
 import (
 	"encoding/base64"
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/internal/evasions"
 	"strings"
 )

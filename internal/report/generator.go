@@ -1,17 +1,13 @@
 package report
 
 import (
-	"obfuskit/internal/model"
-)
-
-import (
 	"fmt"
+	"obfuskit/cmd"
+	"obfuskit/internal/constants"
+	"obfuskit/internal/model"
+	"obfuskit/report"
 	"os"
 	"strings"
-
-	"obfuskit/constants"
-	"obfuskit/report"
-	"obfuskit/cmd"
 )
 
 func GenerateSummary(results *model.TestResults) {

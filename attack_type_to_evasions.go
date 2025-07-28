@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/internal/evasions/command"
 	"obfuskit/internal/evasions/encoders"
 	"obfuskit/internal/evasions/path"

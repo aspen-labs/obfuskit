@@ -11,7 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
-	"obfuskit/constants"
+	"obfuskit/internal/constants"
 	"obfuskit/internal/evasions/command"
 	"obfuskit/internal/evasions/encoders"
 	"obfuskit/internal/evasions/path"
