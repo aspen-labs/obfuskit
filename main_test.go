@@ -83,7 +83,7 @@ func TestBurpIntegration(t *testing.T) {
 	defer srv.Close()
 
 	// send a request
-	resp, err := http.Post(srv.URL+"/api/payload", "application/json", strings.NewReader(`{"payload":"abc"}`))
+	resp, err := http.Post(srv.URL+"/api/payloads", "application/json", strings.NewReader(`{"payload":"abc"}`))
 	if err != nil {
 		t.Fatalf("failed to post request: %v", err)
 	}
