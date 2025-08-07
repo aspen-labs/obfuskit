@@ -45,8 +45,18 @@ var EvasionFunctions = map[types.PayloadEncoding]func(string, types.EvasionLevel
 	types.PayloadEncodingPathTraversal: func(payload string, level types.EvasionLevel) []string {
 		return path.PathTraversalVariants(payload, level)
 	},
-	// TODO: Add more evasion functions
-	// Pending URL, DoubleURL, MixedCase, UTF8
+	types.PayloadEncodingURL: func(payload string, level types.EvasionLevel) []string {
+		return encoders.URLVariants(payload, level)
+	},
+	types.PayloadEncodingDoubleURL: func(payload string, level types.EvasionLevel) []string {
+		return encoders.DoubleURLVariants(payload, level)
+	},
+	types.PayloadEncodingMixedCase: func(payload string, level types.EvasionLevel) []string {
+		return encoders.MixedCaseVariants(payload, level)
+	},
+	types.PayloadEncodingUTF8: func(payload string, level types.EvasionLevel) []string {
+		return encoders.UTF8Variants(payload, level)
+	},
 }
 
 var PayloadEvasionMap = map[types.AttackType][]types.PayloadEncoding{

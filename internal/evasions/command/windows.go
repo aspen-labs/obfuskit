@@ -334,7 +334,7 @@ func substitutionTechniques(payload string) string {
 	// Create the combined command variable
 	combineCmdParts := []string{"set command="}
 	for i := range cmdChars {
-		combineCmdParts = append(combineCmdParts, fmt.Sprintf("%%%_c%d%%", i))
+		combineCmdParts = append(combineCmdParts, fmt.Sprintf("%%c%d%%", i))
 	}
 
 	// Build the final command

@@ -414,7 +414,7 @@ func arithmeticExpansion(payload string) string {
 	cmd := parts[0]
 	if len(cmd) > 0 {
 		firstChar := int(cmd[0])
-		cmdVar := fmt.Sprintf("$(printf \\$(printf '%03o' %d))", firstChar) + cmd[1:]
+		cmdVar := fmt.Sprintf("$(printf \\$(printf '%%03o' %d))", firstChar) + cmd[1:]
 		parts[0] = cmdVar
 	}
 
