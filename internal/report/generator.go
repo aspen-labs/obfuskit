@@ -1,12 +1,14 @@
 package report
 
 import (
+	"encoding/json"
 	"fmt"
 	"obfuskit/internal/model"
 	"obfuskit/report"
 	"obfuskit/types"
 	"os"
 	"strings"
+	"time"
 )
 
 func GenerateSummary(results *model.TestResults) {
@@ -69,6 +71,7 @@ func GenerateReports(results *model.TestResults) error {
 			types.ReportTypePretty,
 			types.ReportTypePDF,
 			types.ReportTypeNuclei,
+			types.ReportTypeJSON,
 		}
 	} else {
 		reportTypes = []types.ReportType{config.ReportType}
@@ -106,6 +109,13 @@ func GenerateReports(results *model.TestResults) error {
 				fmt.Printf("Warning: Failed to generate nuclei templates: %v\n", err)
 			} else {
 				fmt.Println("✅ Nuclei templates generated in nuclei_templates/ directory")
+			}
+		case types.ReportTypeJSON:
+			err := GenerateJSONReport(results)
+			if err != nil {
+				fmt.Printf("Warning: Failed to generate JSON report: %v\n", err)
+			} else {
+				fmt.Println("✅ JSON report generated: waf_test_report.json")
 			}
 		}
 	}
@@ -154,4 +164,126 @@ func GenerateCSVReport(results *model.TestResults) error {
 		}
 	}
 	return nil
+}
+
+// JSONReport represents the structure for JSON output
+type JSONReport struct {
+	Metadata struct {
+		Timestamp string `json:"timestamp"`
+		Tool      string `json:"tool"`
+		Version   string `json:"version"`
+	} `json:"metadata"`
+	Config struct {
+		Action       string `json:"action"`
+		AttackType   string `json:"attack_type"`
+		EvasionLevel string `json:"evasion_level"`
+		TargetURL    string `json:"target_url,omitempty"`
+	} `json:"config"`
+	Summary struct {
+		TotalPayloads   int      `json:"total_payloads"`
+		TotalVariants   int      `json:"total_variants"`
+		SuccessfulTests int      `json:"successful_tests"`
+		FailedTests     int      `json:"failed_tests"`
+		SuccessRate     float64  `json:"success_rate"`
+		AttackTypes     []string `json:"attack_types"`
+		EvasionTypes    []string `json:"evasion_types"`
+	} `json:"summary"`
+	PayloadResults []struct {
+		OriginalPayload string   `json:"original_payload"`
+		AttackType      string   `json:"attack_type"`
+		EvasionType     string   `json:"evasion_type"`
+		Variants        []string `json:"variants"`
+	} `json:"payload_results"`
+	RequestResults []struct {
+		Payload      string `json:"payload"`
+		URL          string `json:"url"`
+		Method       string `json:"method"`
+		StatusCode   int    `json:"status_code"`
+		Blocked      bool   `json:"blocked"`
+		ResponseTime int64  `json:"response_time_ms"`
+		Technique    string `json:"technique"`
+		Part         string `json:"part"`
+	} `json:"request_results,omitempty"`
+}
+
+func GenerateJSONReport(results *model.TestResults) error {
+	filename := "waf_test_report.json"
+
+	// Create JSON report structure
+	jsonReport := JSONReport{}
+
+	// Metadata
+	jsonReport.Metadata.Timestamp = time.Now().Format(time.RFC3339)
+	jsonReport.Metadata.Tool = "ObfusKit"
+	jsonReport.Metadata.Version = "1.0.0"
+
+	// Config
+	if config, ok := results.Config.(*types.Config); ok {
+		jsonReport.Config.Action = string(config.Action)
+		jsonReport.Config.AttackType = string(config.AttackType)
+		jsonReport.Config.EvasionLevel = string(config.EvasionLevel)
+		jsonReport.Config.TargetURL = config.Target.URL
+	}
+
+	// Summary
+	summary := &results.Summary
+	jsonReport.Summary.TotalPayloads = summary.TotalPayloads
+	jsonReport.Summary.TotalVariants = summary.TotalVariants
+	jsonReport.Summary.SuccessfulTests = summary.SuccessfulTests
+	jsonReport.Summary.FailedTests = summary.FailedTests
+	jsonReport.Summary.AttackTypes = summary.AttackTypes
+	jsonReport.Summary.EvasionTypes = summary.EvasionTypes
+
+	if len(results.RequestResults) > 0 {
+		jsonReport.Summary.SuccessRate = float64(summary.SuccessfulTests) / float64(len(results.RequestResults)) * 100
+	}
+
+	// Payload Results
+	for _, result := range results.PayloadResults {
+		jsonReport.PayloadResults = append(jsonReport.PayloadResults, struct {
+			OriginalPayload string   `json:"original_payload"`
+			AttackType      string   `json:"attack_type"`
+			EvasionType     string   `json:"evasion_type"`
+			Variants        []string `json:"variants"`
+		}{
+			OriginalPayload: result.OriginalPayload,
+			AttackType:      result.AttackType,
+			EvasionType:     result.EvasionType,
+			Variants:        result.Variants,
+		})
+	}
+
+	// Request Results
+	for _, result := range results.RequestResults {
+		jsonReport.RequestResults = append(jsonReport.RequestResults, struct {
+			Payload      string `json:"payload"`
+			URL          string `json:"url"`
+			Method       string `json:"method"`
+			StatusCode   int    `json:"status_code"`
+			Blocked      bool   `json:"blocked"`
+			ResponseTime int64  `json:"response_time_ms"`
+			Technique    string `json:"technique"`
+			Part         string `json:"part"`
+		}{
+			Payload:      result.Payload,
+			URL:          result.Request.URI().String(),
+			Method:       string(result.Request.Header.Method()),
+			StatusCode:   result.StatusCode,
+			Blocked:      result.Blocked,
+			ResponseTime: result.ResponseTime.Milliseconds(),
+			Technique:    result.EvasionTechnique,
+			Part:         result.RequestPart,
+		})
+	}
+
+	// Write JSON to file
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(jsonReport)
 }

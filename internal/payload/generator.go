@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"obfuskit/cmd"
 	"obfuskit/internal/model"
@@ -14,7 +15,7 @@ import (
 	"obfuskit/types"
 )
 
-func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel) error {
+func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel, showProgress bool, threads int) error {
 	fmt.Println("\n🔧 Generating payloads...")
 
 	config, ok := results.Config.(*types.Config)
@@ -27,12 +28,34 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 		return fmt.Errorf("failed to load base payloads: %v", err)
 	}
 
+	// Count total payloads for progress tracking
+	totalPayloads := 0
+	for _, payloads := range basePayloads {
+		totalPayloads += len(payloads)
+	}
+
+	// Initialize progress bar
+	var progress *util.TaskProgress
+	if showProgress && totalPayloads > 0 {
+		progress = util.NewTaskProgress("Generating payloads", totalPayloads, true)
+	}
+
+	currentPayload := 0
 	for attackType, payloads := range basePayloads {
 		for _, payload := range payloads {
 			if err := GenerateVariantsForPayload(results, payload, types.AttackType(attackType), level); err != nil {
 				return err
 			}
+
+			currentPayload++
+			if progress != nil {
+				progress.Update(currentPayload)
+			}
 		}
+	}
+
+	if progress != nil {
+		progress.Finish()
 	}
 
 	fmt.Printf("✅ Generated %d payload variants across %d base payloads\n",
@@ -49,7 +72,7 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 	return nil
 }
 
-func HandleSendToURL(results *model.TestResults, level types.EvasionLevel) error {
+func HandleSendToURL(results *model.TestResults, level types.EvasionLevel, showProgress bool, threads int) error {
 	fmt.Println("\n🌐 Generating payloads and sending to URL...")
 
 	config, ok := results.Config.(*types.Config)
@@ -58,7 +81,7 @@ func HandleSendToURL(results *model.TestResults, level types.EvasionLevel) error
 	}
 
 	// First generate the payloads
-	err := HandleGeneratePayloads(results, level)
+	err := HandleGeneratePayloads(results, level, showProgress, threads)
 	if err != nil {
 		return err
 	}
@@ -66,35 +89,95 @@ func HandleSendToURL(results *model.TestResults, level types.EvasionLevel) error
 	// Then send them to the target URL
 	fmt.Printf("🚀 Sending %d payload variants to %s\n", GetTotalVariants(results), config.Target.URL)
 
-	for i, payloadResult := range results.PayloadResults {
-		for j, variant := range payloadResult.Variants {
-			fmt.Printf("Testing payload %d/%d variant %d/%d\r",
-				i+1, len(results.PayloadResults), j+1, len(payloadResult.Variants))
+	totalVariants := GetTotalVariants(results)
+	var urlProgress *util.TaskProgress
+	if showProgress && totalVariants > 0 {
+		urlProgress = util.NewTaskProgress("Testing payloads", totalVariants, true)
+	}
 
-			// Send request using the available request package functions
-			// Create a logger for the request
-			logger := request.NewLogger(os.Stdout)
+	// Create a work queue for parallel processing
+	type workItem struct {
+		variant      string
+		payloadIndex int
+		variantIndex int
+	}
 
-			// Test this single variant
-			injectors := []request.FastHTTPInjector{
-				request.NewFastHTTPHeaderInjector(),
-				request.NewFastHTTPQueryInjector(),
-				request.NewFastHTTPBodyInjector(),
-				request.NewFastHTTPProtocolInjector(),
+	workQueue := make(chan workItem, totalVariants)
+	var resultsMutex sync.Mutex
+	var wg sync.WaitGroup
+	var currentVariant int
+	var progressMutex sync.Mutex
+
+	// Create worker function
+	worker := func() {
+		defer wg.Done()
+
+		// Create a logger for this worker
+		logger := request.NewLogger(os.Stdout)
+
+		// Create injectors for this worker
+		injectors := []request.FastHTTPInjector{
+			request.NewFastHTTPHeaderInjector(),
+			request.NewFastHTTPQueryInjector(),
+			request.NewFastHTTPBodyInjector(),
+			request.NewFastHTTPProtocolInjector(),
+		}
+
+		for work := range workQueue {
+			if !showProgress {
+				fmt.Printf("Testing payload %d variant %d\r", work.payloadIndex+1, work.variantIndex+1)
 			}
 
+			// Test this variant with all injectors
 			for _, injector := range injectors {
-				testResults := injector.Inject(config.Target.URL, variant, logger)
+				testResults := injector.Inject(config.Target.URL, work.variant, logger)
+
+				// Thread-safe append to results
+				resultsMutex.Lock()
 				results.RequestResults = append(results.RequestResults, testResults...)
+				resultsMutex.Unlock()
+			}
+
+			// Update progress thread-safely
+			if urlProgress != nil {
+				progressMutex.Lock()
+				currentVariant++
+				urlProgress.Update(currentVariant)
+				progressMutex.Unlock()
 			}
 		}
+	}
+
+	// Start workers
+	for i := 0; i < threads; i++ {
+		wg.Add(1)
+		go worker()
+	}
+
+	// Queue all work items
+	for i, payloadResult := range results.PayloadResults {
+		for j, variant := range payloadResult.Variants {
+			workQueue <- workItem{
+				variant:      variant,
+				payloadIndex: i,
+				variantIndex: j,
+			}
+		}
+	}
+
+	// Close queue and wait for completion
+	close(workQueue)
+	wg.Wait()
+
+	if urlProgress != nil {
+		urlProgress.Finish()
 	}
 
 	fmt.Printf("\n✅ Completed testing %d payloads against target\n", GetTotalVariants(results))
 	return nil
 }
 
-func HandleExistingPayloads(results *model.TestResults, level types.EvasionLevel) error {
+func HandleExistingPayloads(results *model.TestResults, level types.EvasionLevel, showProgress bool, threads int) error {
 	fmt.Println("\n📁 Processing existing payloads...")
 
 	config, ok := results.Config.(*types.Config)
@@ -117,8 +200,14 @@ func HandleExistingPayloads(results *model.TestResults, level types.EvasionLevel
 		return fmt.Errorf("unknown payload source: %s", config.Payload.Source)
 	}
 
+	// Initialize progress bar for existing payloads
+	var existingProgress *util.TaskProgress
+	if showProgress && len(payloads) > 0 {
+		existingProgress = util.NewTaskProgress("Processing payloads", len(payloads), true)
+	}
+
 	// Process each existing payload
-	for _, payload := range payloads {
+	for i, payload := range payloads {
 		// Try to detect attack type or use a generic approach
 		attackType := util.DetectAttackType(payload)
 		err := GenerateVariantsForPayload(results, payload, attackType, level)
@@ -126,6 +215,14 @@ func HandleExistingPayloads(results *model.TestResults, level types.EvasionLevel
 			fmt.Printf("Warning: Failed to generate variants for payload '%s': %v\n", payload, err)
 			continue
 		}
+
+		if existingProgress != nil {
+			existingProgress.Update(i + 1)
+		}
+	}
+
+	if existingProgress != nil {
+		existingProgress.Finish()
 	}
 
 	fmt.Printf("✅ Processed %d existing payloads into %d variants\n",
