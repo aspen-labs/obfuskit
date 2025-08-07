@@ -139,4 +139,7 @@ type Config struct {
 	EnableFingerprinting bool        `yaml:"-" json:"-"`
 	ShowWAFReport        bool        `yaml:"-" json:"-"`
 	WAFFingerprint       interface{} `yaml:"-" json:"-"`
+
+	// Additional attack types for multi-attack processing (CLI only)
+	AdditionalAttackTypes []AttackType `yaml:"-" json:"-"`
 }

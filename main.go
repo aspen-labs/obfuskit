@@ -13,15 +13,20 @@ import (
 	"obfuskit/cmd"
 	"obfuskit/internal/model"
 	"obfuskit/internal/payload"
+	"obfuskit/internal/performance"
 	"obfuskit/internal/report"
 	"obfuskit/internal/server"
 	"obfuskit/internal/util"
+	"obfuskit/internal/validation"
+	"obfuskit/internal/version"
 	"obfuskit/types"
 )
 
 func main() {
 	// Define command line flags
 	helpFlag := flag.Bool("help", false, "Show help information")
+	versionFlag := flag.Bool("version", false, "Show version information")
+	verboseVersionFlag := flag.Bool("version-full", false, "Show detailed version and build information")
 	configFlag := flag.String("config", "", "Path to configuration file (YAML or JSON)")
 	generateConfigFlag := flag.String("generate-config", "", "Generate example config file (yaml or json)")
 	serverFlag := flag.Bool("server", false, "Start integration webservice")
@@ -53,11 +58,25 @@ func main() {
 	fingerprintFlag := flag.Bool("fingerprint", false, "Enable WAF fingerprinting and adaptive evasion")
 	showWAFReportFlag := flag.Bool("waf-report", false, "Show detailed WAF analysis report")
 
+	// Performance monitoring options
+	showPerfStatsFlag := flag.Bool("perf-stats", false, "Show detailed performance statistics")
+	benchmarkFlag := flag.Bool("benchmark", false, "Run in benchmark mode with detailed metrics")
+
 	flag.Parse()
 
 	// Show help if requested
 	if *helpFlag {
 		showHelp()
+		return
+	}
+
+	if *versionFlag {
+		fmt.Println(version.GetVersionString())
+		return
+	}
+
+	if *verboseVersionFlag {
+		fmt.Println(version.GetDetailedVersionString())
 		return
 	}
 
@@ -110,7 +129,8 @@ func main() {
 		if configErr != nil {
 			log.Fatalf("Invalid CLI arguments: %v", configErr)
 		}
-		fmt.Println("Using command line arguments...")
+		fmt.Print(version.GetStartupBanner())
+		fmt.Println("🚀 Starting ObfusKit with command line arguments...")
 
 		// Create filter options from CLI flags
 		filterOptions := util.CreateFilterOptions(*limitFlag, *minSuccessRateFlag, *complexityFlag,
@@ -140,6 +160,31 @@ func main() {
 	}
 
 	evasionLevel := types.EvasionLevelMedium
+
+	// Validate configuration
+	validationResult := validation.ValidateConfig(config)
+	if validationResult.HasWarnings() || validationResult.HasErrors() {
+		fmt.Println("\n==============================")
+		fmt.Println("CONFIGURATION VALIDATION")
+		fmt.Println("==============================")
+		fmt.Print(validation.FormatValidationReport(validationResult))
+		fmt.Println()
+
+		if validationResult.HasErrors() {
+			os.Exit(1)
+		}
+	}
+
+	// Initialize performance monitor if requested
+	var perfMonitor *performance.Monitor
+	if *showPerfStatsFlag || *benchmarkFlag {
+		perfMonitor = performance.NewMonitor()
+		perfMonitor.Start()
+		if *threadsFlag > 0 {
+			perfMonitor.SetThreads(*threadsFlag)
+		}
+	}
+
 	fmt.Println("\n==============================")
 	fmt.Println("CONFIGURATION SUMMARY")
 	fmt.Println("==============================")
@@ -150,6 +195,9 @@ func main() {
 	fmt.Printf("Target: %s\n", config.Target.Method)
 	fmt.Printf("Report: %s\n", config.ReportType)
 	fmt.Printf("URL: %s\n", config.Target.URL)
+	if *showPerfStatsFlag || *benchmarkFlag {
+		fmt.Printf("Performance Monitoring: Enabled\n")
+	}
 	fmt.Println("==============================")
 
 	// Prepare results
@@ -191,6 +239,14 @@ func main() {
 		}
 	}
 
+	// Stop performance monitoring and show statistics
+	if perfMonitor != nil {
+		perfMonitor.Stop()
+		if *showPerfStatsFlag || *benchmarkFlag {
+			fmt.Print(perfMonitor.FormatStatistics())
+		}
+	}
+
 	fmt.Println("\n✅ WAF testing completed successfully!")
 }
 
@@ -217,9 +273,7 @@ func createConfigFromCLIFlags(attackType, payload, payloadFile, url, urlFile, ou
 			return nil, fmt.Errorf("unsupported attack type '%s'. Supported types: xss, sqli, unixcmdi, wincmdi, oscmdi, path, fileaccess, ldapi, ssrf, xxe, generic, all", attackTypes[0])
 		}
 	} else {
-		// Multiple attack types - use "all" and store individual types for processing
-		config.AttackType = types.AttackTypeAll
-		// Store individual attack types in custom payload metadata for later processing
+		// Multiple attack types - we'll process them by running the payload generation for each type
 		var validTypes []string
 		for _, at := range attackTypes {
 			trimmed := strings.TrimSpace(at)
@@ -229,9 +283,14 @@ func createConfigFromCLIFlags(attackType, payload, payloadFile, url, urlFile, ou
 			}
 			validTypes = append(validTypes, string(parsed))
 		}
-		// Store the attack types list in config for multi-attack processing
-		if config.Payload.Custom == nil {
-			config.Payload.Custom = []string{}
+
+		// Use the first attack type as primary, store others for multi-processing
+		config.AttackType = types.AttackType(validTypes[0])
+		if len(validTypes) > 1 {
+			// Store additional attack types in the dedicated field
+			for i := 1; i < len(validTypes); i++ {
+				config.AdditionalAttackTypes = append(config.AdditionalAttackTypes, types.AttackType(validTypes[i]))
+			}
 		}
 	}
 
@@ -504,13 +563,16 @@ func outputJSON(results *model.TestResults) {
 
 // showHelp displays usage information
 func showHelp() {
-	fmt.Println("Obfuskit. A WAF Efficacy Testing Tool")
+	fmt.Print(version.GetStartupBanner())
+	fmt.Println("Enterprise WAF Evasion Testing Platform")
 	fmt.Println("")
 	fmt.Println("Usage:")
 	fmt.Println("  obfuskit [flags]")
 	fmt.Println("")
 	fmt.Println("General Flags:")
 	fmt.Println("  -help                       Show this help information")
+	fmt.Println("  -version                    Show version information")
+	fmt.Println("  -version-full               Show detailed version and build information")
 	fmt.Println("  -config <file>              Use configuration file (YAML or JSON)")
 	fmt.Println("  -generate-config <fmt>      Generate example config (yaml or json)")
 	fmt.Println("  -server                     Start integration webservice")
@@ -541,6 +603,10 @@ func showHelp() {
 	fmt.Println("WAF Intelligence Options:")
 	fmt.Println("  -fingerprint                Enable WAF fingerprinting and adaptive evasion")
 	fmt.Println("  -waf-report                 Show detailed WAF analysis report")
+	fmt.Println("")
+	fmt.Println("Performance & Benchmarking:")
+	fmt.Println("  -perf-stats                 Show detailed performance statistics")
+	fmt.Println("  -benchmark                  Run in benchmark mode with comprehensive metrics")
 	fmt.Println("")
 	fmt.Println("Features:")
 	fmt.Println("  • Interactive menu-driven interface (when no flags provided)")

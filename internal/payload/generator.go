@@ -24,10 +24,35 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 		return fmt.Errorf("invalid config type in TestResults")
 	}
 
-	basePayloads, err := LoadBasePayloads(config.AttackType)
-	if err != nil {
-		return fmt.Errorf("failed to load base payloads: %v", err)
+	// Handle multiple attack types
+	attackTypesToProcess := []types.AttackType{config.AttackType}
+
+	// Check if there are additional attack types
+	if len(config.AdditionalAttackTypes) > 0 {
+		attackTypesToProcess = append(attackTypesToProcess, config.AdditionalAttackTypes...)
+		fmt.Printf("🔀 Processing multiple attack types: %v\n", attackTypesToProcess)
 	}
+
+	// Load base payloads for all attack types
+	allBasePayloads := make(map[string][]string)
+	for _, attackType := range attackTypesToProcess {
+		basePayloads, err := LoadBasePayloads(attackType)
+		if err != nil {
+			fmt.Printf("Warning: Failed to load payloads for %s: %v\n", attackType, err)
+			continue
+		}
+
+		// Merge payloads from this attack type
+		for key, payloads := range basePayloads {
+			allBasePayloads[key] = append(allBasePayloads[key], payloads...)
+		}
+	}
+
+	if len(allBasePayloads) == 0 {
+		return fmt.Errorf("no payloads could be loaded for any attack types")
+	}
+
+	basePayloads := allBasePayloads
 
 	// Count total payloads for progress tracking
 	totalPayloads := 0
@@ -359,6 +384,20 @@ func LoadBasePayloads(attackType types.AttackType) (map[string][]string, error) 
 	payloads := make(map[string][]string)
 	attackTypes := []types.AttackType{}
 	if attackType == types.AttackTypeGeneric {
+		attackTypes = []types.AttackType{
+			types.AttackTypeXSS,
+			types.AttackTypeSQLI,
+			types.AttackTypeUnixCMDI,
+			types.AttackTypeWinCMDI,
+			types.AttackTypePath,
+			types.AttackTypeFileAccess,
+			types.AttackTypeLDAP,
+			types.AttackTypeSSRF,
+			types.AttackTypeXXE,
+		}
+	} else if attackType == types.AttackTypeAll {
+		// When "all" is specified, it means multiple attack types were provided
+		// We'll get the actual types from the config's custom payload data
 		attackTypes = []types.AttackType{
 			types.AttackTypeXSS,
 			types.AttackTypeSQLI,
