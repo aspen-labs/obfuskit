@@ -1,7 +1,6 @@
 package model
 
 import (
-	"obfuskit/internal/constants"
 	"obfuskit/request"
 )
 
@@ -11,7 +10,7 @@ type PayloadResults struct {
 	AttackType      string
 	EvasionType     string
 	Variants        []string
-	Level           constants.Level
+	Level           string
 }
 
 // TestResults represents the complete test execution results
@@ -31,20 +30,20 @@ type TestSummary struct {
 	EvasionTypes    []string
 }
 
-// BurpRequest is the expected JSON format from Burp
-type BurpRequest struct {
+// PayloadRequest is the expected JSON format from api
+type PayloadRequest struct {
 	Payload string `json:"payload"`
 }
 
-type BurpEvadedPayload struct {
-	OriginalPayload string          `json:"original_payload"`
-	AttackType      string          `json:"attack_type"`
-	EvasionType     string          `json:"evasion_type"`
-	Level           constants.Level `json:"level"`
-	Variant         string          `json:"variant"`
+type EvadedPayload struct {
+	OriginalPayload string `json:"original_payload"`
+	AttackType      string `json:"attack_type"`
+	EvasionType     string `json:"evasion_type"`
+	Level           string `json:"evasion_level"`
+	Variant         string `json:"variant"`
 }
 
-type BurpResponse struct {
-	Status   string              `json:"status"`
-	Payloads []BurpEvadedPayload `json:"payloads"`
+type PayloadResponse struct {
+	Status   string          `json:"status"`
+	Payloads []EvadedPayload `json:"payloads"`
 }

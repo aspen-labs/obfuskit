@@ -3,15 +3,15 @@ package command
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/internal/constants"
 	"obfuskit/internal/evasions"
+	"obfuskit/types"
 	"strings"
 	"time"
 )
 
 // UnixCmdVariants generates various Unix/Linux command evasion techniques
 // based on the specified obfuscation level
-func UnixCmdVariants(payload string, level constants.Level) []string {
+func UnixCmdVariants(payload string, level types.EvasionLevel) []string {
 	var variants []string
 
 	// Basic evasion techniques
@@ -27,7 +27,7 @@ func UnixCmdVariants(payload string, level constants.Level) []string {
 		randomizedCase(payload),        // Random capitalization where possible
 	)
 
-	if level == constants.Basic {
+	if level == types.EvasionLevelBasic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -46,7 +46,7 @@ func UnixCmdVariants(payload string, level constants.Level) []string {
 	variants = append(variants, hexEncoding(payload)...)
 
 	// Return medium variants if level is Medium
-	if level == constants.Medium {
+	if level == types.EvasionLevelMedium {
 		return evasions.UniqueStrings(variants)
 	}
 

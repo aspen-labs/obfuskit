@@ -8,28 +8,28 @@ import (
 	"strings"
 
 	"obfuskit/cmd"
-	"obfuskit/internal/constants"
 	"obfuskit/internal/model"
 	"obfuskit/internal/util"
 	"obfuskit/request"
+	"obfuskit/types"
 )
 
-func HandleGeneratePayloads(results *model.TestResults, level constants.Level) error {
+func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel) error {
 	fmt.Println("\n🔧 Generating payloads...")
 
-	config, ok := results.Config.(*cmd.Config)
+	config, ok := results.Config.(*types.Config)
 	if !ok {
 		return fmt.Errorf("invalid config type in TestResults")
 	}
 
-	basePayloads, err := LoadBasePayloads(config.Attack.Type)
+	basePayloads, err := LoadBasePayloads(config.AttackType)
 	if err != nil {
 		return fmt.Errorf("failed to load base payloads: %v", err)
 	}
 
 	for attackType, payloads := range basePayloads {
 		for _, payload := range payloads {
-			if err := GenerateVariantsForPayload(results, payload, attackType, level); err != nil {
+			if err := GenerateVariantsForPayload(results, payload, types.AttackType(attackType), level); err != nil {
 				return err
 			}
 		}
@@ -46,16 +46,13 @@ func HandleGeneratePayloads(results *model.TestResults, level constants.Level) e
 		fmt.Println("  - payloads_simple.txt (one payload per line)")
 	}
 
-	// Generate nuclei templates from payloads
-	// (to be implemented in report package)
-
 	return nil
 }
 
-func HandleSendToURL(results *model.TestResults, level constants.Level) error {
+func HandleSendToURL(results *model.TestResults, level types.EvasionLevel) error {
 	fmt.Println("\n🌐 Generating payloads and sending to URL...")
 
-	config, ok := results.Config.(*cmd.Config)
+	config, ok := results.Config.(*types.Config)
 	if !ok {
 		return fmt.Errorf("invalid config type in TestResults")
 	}
@@ -97,10 +94,10 @@ func HandleSendToURL(results *model.TestResults, level constants.Level) error {
 	return nil
 }
 
-func HandleExistingPayloads(results *model.TestResults, level constants.Level) error {
+func HandleExistingPayloads(results *model.TestResults, level types.EvasionLevel) error {
 	fmt.Println("\n📁 Processing existing payloads...")
 
-	config, ok := results.Config.(*cmd.Config)
+	config, ok := results.Config.(*types.Config)
 	if !ok {
 		return fmt.Errorf("invalid config type in TestResults")
 	}
@@ -124,7 +121,7 @@ func HandleExistingPayloads(results *model.TestResults, level constants.Level) e
 	for _, payload := range payloads {
 		// Try to detect attack type or use a generic approach
 		attackType := util.DetectAttackType(payload)
-		err := util.GenerateVariantsForPayload(results, payload, attackType, level)
+		err := GenerateVariantsForPayload(results, payload, attackType, level)
 		if err != nil {
 			fmt.Printf("Warning: Failed to generate variants for payload '%s': %v\n", payload, err)
 			continue
@@ -132,18 +129,22 @@ func HandleExistingPayloads(results *model.TestResults, level constants.Level) e
 	}
 
 	fmt.Printf("✅ Processed %d existing payloads into %d variants\n",
-		len(payloads), util.GetTotalVariants(results))
+		len(payloads), GetTotalVariants(results))
 
 	return nil
 }
 
-func GenerateVariantsForPayload(results *model.TestResults, payload, attackType string, level constants.Level) error {
+func GenerateVariantsForPayload(results *model.TestResults, payload string, attackType types.AttackType, level types.EvasionLevel) error {
 	evasions, exists := cmd.GetEvasionsForPayload(attackType)
 	if !exists {
-		evasions = []string{"Base64Variants", "HexVariants", "UnicodeVariants"}
+		evasions = []types.PayloadEncoding{
+			types.PayloadEncodingBase64,
+			types.PayloadEncodingHex,
+			types.PayloadEncodingUnicode,
+		}
 	}
 
-	filteredEvasions := FilterEvasions(evasions, results.Config)
+	filteredEvasions := FilterEvasionEncodings(evasions, results.Config)
 
 	for _, evasionType := range filteredEvasions {
 		variants, err := cmd.ApplyEvasion(payload, evasionType, level)
@@ -154,45 +155,45 @@ func GenerateVariantsForPayload(results *model.TestResults, payload, attackType 
 		if len(variants) > 0 {
 			results.PayloadResults = append(results.PayloadResults, model.PayloadResults{
 				OriginalPayload: payload,
-				AttackType:      attackType,
-				EvasionType:     evasionType,
+				AttackType:      string(attackType),
+				EvasionType:     string(evasionType),
 				Variants:        variants,
-				Level:           level,
+				Level:           string(level),
 			})
 		}
 	}
 	return nil
 }
 
-func FilterEvasions(evasions []string, config interface{}) []string {
-	cfg, ok := config.(*cmd.Config)
+func FilterEvasionEncodings(evasions []types.PayloadEncoding, config interface{}) []types.PayloadEncoding {
+	cfg, ok := config.(*types.Config)
 	if !ok {
 		return evasions
 	}
-	if cfg.Payload.Method == "Auto" {
+	if cfg.Payload.Method == types.PayloadMethodAuto {
 		return evasions
 	}
-	var filtered []string
+	var filtered []types.PayloadEncoding
 	switch cfg.Payload.Method {
-	case "Encodings":
-		encodingTypes := map[string]bool{
-			"Base64Variants": true, "HexVariants": true, "HTMLVariants": true,
-			"UnicodeVariants": true, "OctalVariants": true, "BestFitVariants": true,
+	case types.PayloadMethodEncodings:
+		encodingTypes := map[types.PayloadEncoding]bool{
+			types.PayloadEncodingBase64: true, types.PayloadEncodingHex: true, types.PayloadEncodingHTML: true,
+			types.PayloadEncodingUnicode: true, types.PayloadEncodingOctal: true, types.PayloadEncodingBestFit: true,
 		}
 		for _, evasion := range evasions {
 			if encodingTypes[evasion] {
 				filtered = append(filtered, evasion)
 			}
 		}
-	case "Paths":
+	case types.PayloadMethodPaths:
 		for _, evasion := range evasions {
-			if evasion == "PathTraversalVariants" {
+			if evasion == types.PayloadEncodingPathTraversal {
 				filtered = append(filtered, evasion)
 			}
 		}
-	case "Commands":
-		commandTypes := map[string]bool{
-			"UnixCmdVariants": true, "WindowsCmdVariants": true,
+	case types.PayloadMethodCommands:
+		commandTypes := map[types.PayloadEncoding]bool{
+			types.PayloadEncodingUnixCmd: true, types.PayloadEncodingWindowsCmd: true,
 		}
 		for _, evasion := range evasions {
 			if commandTypes[evasion] {
@@ -205,35 +206,32 @@ func FilterEvasions(evasions []string, config interface{}) []string {
 	return filtered
 }
 
-func LoadBasePayloads(attackType string) (map[string][]string, error) {
+func LoadBasePayloads(attackType types.AttackType) (map[string][]string, error) {
 	payloads := make(map[string][]string)
-	attackTypes := []string{}
-	if attackType == "All" {
-		attackTypes = []string{"xss", "sqli", "unixcmdi", "wincmdi", "path", "fileaccess", "ldapi"}
+	attackTypes := []types.AttackType{}
+	if attackType == types.AttackTypeGeneric {
+		attackTypes = []types.AttackType{
+			types.AttackTypeXSS,
+			types.AttackTypeSQLI,
+			types.AttackTypeUnixCMDI,
+			types.AttackTypeWinCMDI,
+			types.AttackTypePath,
+			types.AttackTypeFileAccess,
+			types.AttackTypeLDAP,
+			types.AttackTypeSSRF,
+			types.AttackTypeXXE,
+		}
 	} else {
-		attackTypeMap := map[string]string{
-			"XSS":               "xss",
-			"SQLi":              "sqli",
-			"Command Injection": "unixcmdi",
-			"LFI":               "fileaccess",
-			"RFI":               "fileaccess",
-			"SSRF":              "ldapi",
-			"XXE":               "ldapi",
-		}
-		if mappedType, exists := attackTypeMap[attackType]; exists {
-			attackTypes = []string{mappedType}
-		} else {
-			attackTypes = []string{strings.ToLower(attackType)}
-		}
+		attackTypes = []types.AttackType{attackType}
 	}
 	for _, aType := range attackTypes {
-		filePath := filepath.Join("payloads", aType+".txt")
+		filePath := filepath.Join("payloads", string(aType)+".txt")
 		filePayloads, err := LoadPayloadsFromFile(filePath)
 		if err != nil {
 			fmt.Printf("Warning: Could not load payloads for %s: %v\n", aType, err)
 			continue
 		}
-		payloads[aType] = filePayloads
+		payloads[string(aType)] = filePayloads
 	}
 	if len(payloads) == 0 {
 		return nil, fmt.Errorf("no payloads could be loaded for attack type: %s", attackType)

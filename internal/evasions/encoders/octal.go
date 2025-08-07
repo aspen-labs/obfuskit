@@ -3,15 +3,15 @@ package encoders
 import (
 	"fmt"
 	"math/rand"
-	"obfuskit/internal/constants"
 	"obfuskit/internal/evasions"
+	"obfuskit/types"
 	"regexp"
 	"strings"
 )
 
 // OctalVariants generates various octal encoded variants of the input payload
 // based on the specified obfuscation level
-func OctalVariants(payload string, level constants.Level) []string {
+func OctalVariants(payload string, level types.EvasionLevel) []string {
 	var variants []string
 
 	// Basic octal encodings
@@ -31,7 +31,7 @@ func OctalVariants(payload string, level constants.Level) []string {
 	)
 
 	// Return basic variants if level is Basic
-	if level == constants.Basic {
+	if level == types.EvasionLevelBasic {
 		return evasions.UniqueStrings(variants)
 	}
 
@@ -48,7 +48,7 @@ func OctalVariants(payload string, level constants.Level) []string {
 	)
 
 	// Return medium variants if level is Medium
-	if level == constants.Medium {
+	if level == types.EvasionLevelMedium {
 		return evasions.UniqueStrings(variants)
 	}
 
