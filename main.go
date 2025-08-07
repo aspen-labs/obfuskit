@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"obfuskit/cmd"
 	"obfuskit/internal/model"
@@ -21,6 +22,17 @@ func main() {
 	configFlag := flag.String("config", "", "Path to configuration file (YAML or JSON)")
 	generateConfigFlag := flag.String("generate-config", "", "Generate example config file (yaml or json)")
 	serverFlag := flag.Bool("server", false, "Start integration webservice")
+
+	// Simple CLI flags for common use cases
+	attackTypeFlag := flag.String("attack", "", "Attack type (xss, sqli, unixcmdi, wincmdi, path, fileaccess, ldapi)")
+	payloadFlag := flag.String("payload", "", "Single payload to generate evasions for")
+	payloadFileFlag := flag.String("payload-file", "", "File containing payloads (one per line)")
+	urlFlag := flag.String("url", "", "Target URL to test payloads against")
+	outputFlag := flag.String("output", "", "Output file path (default: print to console)")
+	levelFlag := flag.String("level", "medium", "Evasion level (basic, medium, advanced)")
+	encodingFlag := flag.String("encoding", "", "Specific encoding method (url, html, unicode, base64, hex, etc.)")
+	reportFlag := flag.String("report", "pretty", "Report format (pretty, html, pdf, csv, nuclei, json)")
+
 	flag.Parse()
 
 	// Show help if requested
@@ -70,7 +82,16 @@ func main() {
 
 	var config *types.Config
 	var configErr error
-	if *configFlag != "" {
+
+	// Check if simple CLI flags are used
+	if hasSimpleCLIFlags(*attackTypeFlag, *payloadFlag, *payloadFileFlag) {
+		config, configErr = createConfigFromCLIFlags(*attackTypeFlag, *payloadFlag, *payloadFileFlag,
+			*urlFlag, *outputFlag, *levelFlag, *encodingFlag, *reportFlag)
+		if configErr != nil {
+			log.Fatalf("Invalid CLI arguments: %v", configErr)
+		}
+		fmt.Println("Using command line arguments...")
+	} else if *configFlag != "" {
 		config, configErr = cmd.LoadConfig(*configFlag)
 		if configErr != nil {
 			log.Fatalf("Invalid config: %v", configErr)
@@ -135,6 +156,169 @@ func main() {
 	fmt.Println("\n✅ WAF testing completed successfully!")
 }
 
+// hasSimpleCLIFlags checks if any of the simple CLI flags are provided
+func hasSimpleCLIFlags(attackType, payload, payloadFile string) bool {
+	return attackType != "" || payload != "" || payloadFile != ""
+}
+
+// createConfigFromCLIFlags creates a configuration from CLI flags
+func createConfigFromCLIFlags(attackType, payload, payloadFile, url, output, level, encoding, report string) (*types.Config, error) {
+	config := &types.Config{}
+
+	// Validate attack type
+	if attackType == "" {
+		return nil, fmt.Errorf("attack type is required (use -attack flag)")
+	}
+
+	// Convert and validate attack type
+	switch strings.ToLower(attackType) {
+	case "xss":
+		config.AttackType = types.AttackTypeXSS
+	case "sqli", "sql":
+		config.AttackType = types.AttackTypeSQLI
+	case "unixcmdi", "unix":
+		config.AttackType = types.AttackTypeUnixCMDI
+	case "wincmdi", "windows":
+		config.AttackType = types.AttackTypeWinCMDI
+	case "oscmdi", "os":
+		config.AttackType = types.AttackTypeOsCMDI
+	case "path":
+		config.AttackType = types.AttackTypePath
+	case "fileaccess", "file":
+		config.AttackType = types.AttackTypeFileAccess
+	case "ldapi", "ldap":
+		config.AttackType = types.AttackTypeLDAP
+	case "ssrf":
+		config.AttackType = types.AttackTypeSSRF
+	case "xxe":
+		config.AttackType = types.AttackTypeXXE
+	case "generic":
+		config.AttackType = types.AttackTypeGeneric
+	case "all":
+		config.AttackType = types.AttackTypeAll
+	default:
+		return nil, fmt.Errorf("unsupported attack type '%s'. Supported types: xss, sqli, unixcmdi, wincmdi, oscmdi, path, fileaccess, ldapi, ssrf, xxe, generic, all", attackType)
+	}
+
+	// Set action based on whether URL is provided
+	if url != "" {
+		config.Action = types.ActionSendToURL
+		config.Target = types.Target{
+			Method: types.TargetMethodURL,
+			URL:    url,
+		}
+	} else {
+		config.Action = types.ActionGeneratePayloads
+		if output != "" {
+			config.Target = types.Target{
+				Method: types.TargetMethodFile,
+				File:   output,
+			}
+		} else {
+			config.Target = types.Target{
+				Method: types.TargetMethodFile,
+				File:   "console", // Special value to indicate console output
+			}
+		}
+	}
+
+	// Set payload configuration
+	if payload != "" && payloadFile != "" {
+		return nil, fmt.Errorf("cannot specify both -payload and -payload-file")
+	}
+
+	if payload != "" {
+		config.Payload = types.Payload{
+			Method: types.PayloadMethodEnterManually,
+			Source: types.PayloadSourceEnterManually,
+			Custom: []string{payload},
+		}
+	} else if payloadFile != "" {
+		config.Payload = types.Payload{
+			Method:   types.PayloadMethodFile,
+			Source:   types.PayloadSourceFromFile,
+			FilePath: payloadFile,
+		}
+	} else {
+		// Use auto-generated payloads
+		config.Payload = types.Payload{
+			Method: types.PayloadMethodAuto,
+			Source: types.PayloadSourceGenerated,
+		}
+	}
+
+	// Set encoding if specified
+	if encoding != "" {
+		config.Payload.Method = types.PayloadMethodEncodings
+		switch strings.ToLower(encoding) {
+		case "url":
+			config.Payload.Encoding = types.PayloadEncodingURL
+		case "doubleurl", "double-url":
+			config.Payload.Encoding = types.PayloadEncodingDoubleURL
+		case "html":
+			config.Payload.Encoding = types.PayloadEncodingHTML
+		case "unicode":
+			config.Payload.Encoding = types.PayloadEncodingUnicode
+		case "base64", "b64":
+			config.Payload.Encoding = types.PayloadEncodingBase64
+		case "hex":
+			config.Payload.Encoding = types.PayloadEncodingHex
+		case "octal":
+			config.Payload.Encoding = types.PayloadEncodingOctal
+		case "bestfit", "best-fit":
+			config.Payload.Encoding = types.PayloadEncodingBestFit
+		case "mixedcase", "mixed-case":
+			config.Payload.Encoding = types.PayloadEncodingMixedCase
+		case "utf8", "utf-8":
+			config.Payload.Encoding = types.PayloadEncodingUTF8
+		case "unixcmd", "unix-cmd":
+			config.Payload.Encoding = types.PayloadEncodingUnixCmd
+		case "windowscmd", "windows-cmd":
+			config.Payload.Encoding = types.PayloadEncodingWindowsCmd
+		case "pathtraversal", "path-traversal":
+			config.Payload.Encoding = types.PayloadEncodingPathTraversal
+		default:
+			return nil, fmt.Errorf("unsupported encoding '%s'. Supported encodings: url, html, unicode, base64, hex, octal, bestfit, mixedcase, utf8, unixcmd, windowscmd, pathtraversal", encoding)
+		}
+	}
+
+	// Set evasion level
+	switch strings.ToLower(level) {
+	case "basic":
+		config.EvasionLevel = types.EvasionLevelBasic
+	case "medium":
+		config.EvasionLevel = types.EvasionLevelMedium
+	case "advanced":
+		config.EvasionLevel = types.EvasionLevelAdvanced
+	default:
+		return nil, fmt.Errorf("unsupported evasion level '%s'. Supported levels: basic, medium, advanced", level)
+	}
+
+	// Set report type
+	switch strings.ToLower(report) {
+	case "pretty", "terminal":
+		config.ReportType = types.ReportTypePretty
+	case "html":
+		config.ReportType = types.ReportTypeHTML
+	case "pdf":
+		config.ReportType = types.ReportTypePDF
+	case "csv":
+		config.ReportType = types.ReportTypeCSV
+	case "nuclei":
+		config.ReportType = types.ReportTypeNuclei
+	case "json":
+		config.ReportType = types.ReportTypeJSON
+	case "auto":
+		config.ReportType = types.ReportTypeAuto
+	case "all":
+		config.ReportType = types.ReportTypeAll
+	default:
+		return nil, fmt.Errorf("unsupported report format '%s'. Supported formats: pretty, html, pdf, csv, nuclei, json, auto, all", report)
+	}
+
+	return config, nil
+}
+
 // showHelp displays usage information
 func showHelp() {
 	fmt.Println("Obfuskit. A WAF Efficacy Testing Tool")
@@ -142,25 +326,52 @@ func showHelp() {
 	fmt.Println("Usage:")
 	fmt.Println("  obfuskit [flags]")
 	fmt.Println("")
-	fmt.Println("Flags:")
-	fmt.Println("  -help                    Show this help information")
-	fmt.Println("  -config <file>		        Use configuration file (YAML or JSON)")
-	fmt.Println("  -generate-config <fmt>	  Generate example config (yaml or json)")
-	fmt.Println("  -server			            Start integration webservice")
-	fmt.Println("  -server -config <file>	  Start integration webservice with config")
+	fmt.Println("General Flags:")
+	fmt.Println("  -help                       Show this help information")
+	fmt.Println("  -config <file>              Use configuration file (YAML or JSON)")
+	fmt.Println("  -generate-config <fmt>      Generate example config (yaml or json)")
+	fmt.Println("  -server                     Start integration webservice")
+	fmt.Println("")
+	fmt.Println("Simple CLI Flags (can be used without config):")
+	fmt.Println("  -attack <type>              Attack type (xss, sqli, unixcmdi, wincmdi, path, fileaccess, ldapi)")
+	fmt.Println("  -payload <string>           Single payload to generate evasions for")
+	fmt.Println("  -payload-file <file>        File containing payloads (one per line)")
+	fmt.Println("  -url <url>                  Target URL to test payloads against")
+	fmt.Println("  -output <file>              Output file path (default: print to console)")
+	fmt.Println("  -level <level>              Evasion level: basic, medium, advanced (default: medium)")
+	fmt.Println("  -encoding <method>          Specific encoding: url, html, unicode, base64, hex, etc.")
+	fmt.Println("  -report <format>            Report format: pretty, html, pdf, csv, nuclei, json (default: pretty)")
 	fmt.Println("")
 	fmt.Println("Features:")
-	fmt.Println("  • Interactive menu-driven interface")
+	fmt.Println("  • Interactive menu-driven interface (when no flags provided)")
 	fmt.Println("  • Configuration file support (YAML/JSON)")
+	fmt.Println("  • Simple command-line interface for quick testing")
 	fmt.Println("  • Multiple evasion levels (Basic, Medium, Advanced)")
 	fmt.Println("  • Support for various attack types (XSS, SQLi, Command Injection, etc.)")
 	fmt.Println("  • Multiple encoding options")
 	fmt.Println("  • Payload generation and testing capabilities")
 	fmt.Println("")
 	fmt.Println("Examples:")
-	fmt.Println("  obfuskit                                    # Run with interactive interface")
-	fmt.Println("  obfuskit -config config.yaml                # Run with config file")
-	fmt.Println("  obfuskit -generate-config yaml              # Generate example YAML config")
-	fmt.Println("  obfuskit -generate-config json              # Generate example JSON config")
-	fmt.Println("  obfuskit -server -config config_server.yaml # Run Burp integration webservice")
+	fmt.Println("  # Interactive mode")
+	fmt.Println("  obfuskit")
+	fmt.Println("")
+	fmt.Println("  # Quick payload generation")
+	fmt.Println("  obfuskit -attack xss -payload '<script>alert(1)</script>'")
+	fmt.Println("  obfuskit -attack sqli -payload \"' OR 1=1 --\" -level advanced")
+	fmt.Println("")
+	fmt.Println("  # Test against URL")
+	fmt.Println("  obfuskit -attack xss -payload '<script>alert(1)</script>' -url https://example.com")
+	fmt.Println("")
+	fmt.Println("  # Use payload file and save to output")
+	fmt.Println("  obfuskit -attack xss -payload-file payloads.txt -output results.txt")
+	fmt.Println("")
+	fmt.Println("  # Specific encoding")
+	fmt.Println("  obfuskit -attack xss -payload '<script>alert(1)</script>' -encoding unicode")
+	fmt.Println("")
+	fmt.Println("  # Configuration file")
+	fmt.Println("  obfuskit -config config.yaml")
+	fmt.Println("  obfuskit -generate-config yaml")
+	fmt.Println("")
+	fmt.Println("  # Server mode")
+	fmt.Println("  obfuskit -server -config config_server.yaml")
 }

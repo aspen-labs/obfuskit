@@ -8,9 +8,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "evasor",
-	Short: "Evasor - Evasion Payload Generator for WAF Testing",
-	Long:  `Evasor generates evasive variants of known attack payloads to test Web Application Firewalls (WAFs).`,
+	Use:   "obfuskit",
+	Short: "Obfuskit - Evasion Payload Generator for WAF Testing",
+	Long:  `Obfuskit generates evasive variants of known attack payloads to test Web Application Firewalls (WAFs).`,
 }
 
 func Execute() {
