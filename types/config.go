@@ -131,4 +131,7 @@ type Config struct {
 
 	// Report configuration
 	ReportType ReportType `yaml:"report_type" json:"report_type"`
+
+	// Advanced filtering options (CLI only, not part of YAML/JSON config)
+	FilterOptions interface{} `yaml:"-" json:"-"`
 }

@@ -22,7 +22,14 @@ _obfuskit() {
         '-report[Report format]:report:(pretty terminal html pdf csv nuclei json auto all)' \
         '-threads[Number of concurrent threads]:threads:(1 2 4 5 8 10)' \
         '-format[Output format]:format:(text json csv)' \
-        '-progress[Show progress bar for long operations]'
+        '-progress[Show progress bar for long operations]' \
+        '-limit[Limit number of payloads]:limit:(10 50 100 500 1000)' \
+        '-min-success-rate[Minimum success rate]:rate:(0.1 0.2 0.5 0.8)' \
+        '-complexity[Filter by complexity]:complexity:(simple medium complex)' \
+        '-max-response-time[Max response time]:time:(1s 2s 5s 10s 500ms)' \
+        '-filter-status[Filter by status codes]:codes:(200 404 403 500)' \
+        '-exclude-encodings[Exclude encodings]:encodings:(base64 hex unicode url html)' \
+        '-only-successful[Only show successful bypasses]'
 }
 
 _obfuskit_attack_types() {

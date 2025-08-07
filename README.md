@@ -119,6 +119,12 @@ ObfusKit offers three ways to use the tool:
 # 🚀  High-performance enterprise testing
 ./obfuskit -attack xss,sqli -payload-file payloads.txt -url-file targets.txt -threads 10 -progress
 
+# 🎯  Advanced filtering for precision testing
+./obfuskit -attack xss -payload '<script>alert(1)</script>' -limit 100 -complexity medium -exclude-encodings 'base64,hex'
+
+# ⚡  Performance-optimized testing
+./obfuskit -attack sqli -url https://target.com -only-successful -max-response-time 2s
+
 ```
 
 #### Available CLI Flags:
@@ -134,6 +140,15 @@ ObfusKit offers three ways to use the tool:
 - `-threads <num>` - Number of concurrent threads (default: 1)
 - `-format <fmt>` - Output format: text, json, csv (default: text)
 - `-progress` - Show progress bar for long operations
+
+**Advanced Filtering Options:**
+- `-limit <num>` - Limit number of payloads to generate (0 = no limit)
+- `-min-success-rate <rate>` - Minimum success rate filter (0.0-1.0)
+- `-complexity <level>` - Filter by complexity: simple, medium, complex
+- `-max-response-time <dur>` - Filter out slow payloads (e.g., 5s, 500ms)
+- `-filter-status <codes>` - Filter by status codes (e.g., '200,404')
+- `-exclude-encodings <list>` - Exclude encodings (e.g., 'base64,hex')
+- `-only-successful` - Only show payloads that bypassed WAF
 
 ### 2. Configuration Files
 
@@ -248,7 +263,31 @@ Enhanced user experience with progress indicators and JSON output:
 ./obfuskit -attack xss,sqli -payload-file payloads.txt -url-file targets.txt -format json -progress
 ```
 
-### 🎯 **Auto-completion Support**
+### 🎯 **Advanced Filtering & Precision Testing**
+
+Fine-tune your testing with sophisticated filtering options:
+
+```bash
+# Limit payload count for quick testing
+./obfuskit -attack xss -payload '<script>alert(1)</script>' -limit 50
+
+# Filter by payload complexity
+./obfuskit -attack sqli -payload "' OR 1=1 --" -complexity simple
+
+# Exclude specific encoding methods
+./obfuskit -attack xss -payload-file payloads.txt -exclude-encodings 'base64,hex,unicode'
+
+# Only successful bypasses (URL testing)
+./obfuskit -attack xss -url https://target.com -only-successful -max-response-time 2s
+
+# Filter by HTTP status codes
+./obfuskit -attack sqli -url https://target.com -filter-status '200,404'
+
+# Minimum success rate filter
+./obfuskit -attack all -url-file targets.txt -min-success-rate 0.3
+```
+
+### 🚀 **Auto-completion Support**
 
 Install shell auto-completion for better CLI experience:
 
@@ -377,9 +416,9 @@ docker run obfuskit:latest -attack xss -payload '<script>alert(1)</script>'
 - **✅ Progress Indicators** - Real-time progress bars with ETA calculations
 - **✅ Auto-completion Scripts** - Enhanced CLI experience for bash/zsh
 - **✅ Multiple Attack Types** - Combined attack testing (e.g., `-attack xss,sqli,unixcmdi`)
+- **✅ Advanced Filtering** - Filter by complexity, limit payloads, exclude encodings, response criteria
 
 ### 🚧 In Progress (v2.1)
-- **🔄 Advanced Filtering** - Filter payloads by complexity, success rate, and response patterns
 - **🔄 WAF Fingerprinting** - Automatic WAF detection and tailored evasion strategies
 
 ### 🎯 Planned Features (v3.0)

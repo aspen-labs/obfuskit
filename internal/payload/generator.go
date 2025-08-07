@@ -58,6 +58,15 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 		progress.Finish()
 	}
 
+	// Apply filtering if configured
+	originalCount := len(results.PayloadResults)
+	if config, ok := results.Config.(*types.Config); ok && config.FilterOptions != nil {
+		if filterOptions, ok := config.FilterOptions.(*util.FilterOptions); ok {
+			results.PayloadResults = util.FilterPayloadResults(results.PayloadResults, filterOptions)
+			util.PrintFilterSummary(filterOptions, originalCount, len(results.PayloadResults))
+		}
+	}
+
 	fmt.Printf("✅ Generated %d payload variants across %d base payloads\n",
 		GetTotalVariants(results), len(results.PayloadResults))
 
@@ -173,6 +182,18 @@ func HandleSendToURL(results *model.TestResults, level types.EvasionLevel, showP
 		urlProgress.Finish()
 	}
 
+	// Apply request result filtering if configured
+	originalRequestCount := len(results.RequestResults)
+	if config, ok := results.Config.(*types.Config); ok && config.FilterOptions != nil {
+		if filterOptions, ok := config.FilterOptions.(*util.FilterOptions); ok {
+			results.RequestResults = util.FilterRequestResults(results.RequestResults, filterOptions)
+			if len(filterOptions.FilterStatusCodes) > 0 || filterOptions.OnlySuccessful || filterOptions.MaxResponseTime > 0 {
+				fmt.Printf("🔍 Filtered %d -> %d request results based on response criteria\n",
+					originalRequestCount, len(results.RequestResults))
+			}
+		}
+	}
+
 	fmt.Printf("\n✅ Completed testing %d payloads against target\n", GetTotalVariants(results))
 	return nil
 }
@@ -223,6 +244,15 @@ func HandleExistingPayloads(results *model.TestResults, level types.EvasionLevel
 
 	if existingProgress != nil {
 		existingProgress.Finish()
+	}
+
+	// Apply filtering if configured
+	originalCount := len(results.PayloadResults)
+	if config, ok := results.Config.(*types.Config); ok && config.FilterOptions != nil {
+		if filterOptions, ok := config.FilterOptions.(*util.FilterOptions); ok {
+			results.PayloadResults = util.FilterPayloadResults(results.PayloadResults, filterOptions)
+			util.PrintFilterSummary(filterOptions, originalCount, len(results.PayloadResults))
+		}
 	}
 
 	fmt.Printf("✅ Processed %d existing payloads into %d variants\n",

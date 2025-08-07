@@ -15,6 +15,7 @@ import (
 	"obfuskit/internal/payload"
 	"obfuskit/internal/report"
 	"obfuskit/internal/server"
+	"obfuskit/internal/util"
 	"obfuskit/types"
 )
 
@@ -38,6 +39,15 @@ func main() {
 	threadsFlag := flag.Int("threads", 1, "Number of concurrent threads for parallel processing")
 	formatFlag := flag.String("format", "text", "Output format (text, json, csv)")
 	progressFlag := flag.Bool("progress", false, "Show progress bar for long operations")
+
+	// Advanced filtering options
+	limitFlag := flag.Int("limit", 0, "Limit number of payloads to generate (0 = no limit)")
+	minSuccessRateFlag := flag.Float64("min-success-rate", 0.0, "Minimum success rate filter (0.0-1.0)")
+	complexityFlag := flag.String("complexity", "", "Filter by payload complexity (simple, medium, complex)")
+	responseTimeFlag := flag.Duration("max-response-time", 0, "Filter out payloads with response time > duration")
+	statusCodesFlag := flag.String("filter-status", "", "Filter by status codes (e.g., '200,404' to only show these)")
+	excludeEncodingsFlag := flag.String("exclude-encodings", "", "Exclude specific encodings (e.g., 'base64,hex')")
+	onlySuccessfulFlag := flag.Bool("only-successful", false, "Only show payloads that successfully bypassed WAF")
 
 	flag.Parse()
 
@@ -97,6 +107,13 @@ func main() {
 			log.Fatalf("Invalid CLI arguments: %v", configErr)
 		}
 		fmt.Println("Using command line arguments...")
+
+		// Create filter options from CLI flags
+		filterOptions := util.CreateFilterOptions(*limitFlag, *minSuccessRateFlag, *complexityFlag,
+			*responseTimeFlag, *statusCodesFlag, *excludeEncodingsFlag, *onlySuccessfulFlag)
+
+		// Store filter options in config for later use
+		config.FilterOptions = filterOptions
 	} else if *configFlag != "" {
 		config, configErr = cmd.LoadConfig(*configFlag)
 		if configErr != nil {
@@ -504,6 +521,15 @@ func showHelp() {
 	fmt.Println("  -format <fmt>               Output format: text, json, csv (default: text)")
 	fmt.Println("  -progress                   Show progress bar for long operations")
 	fmt.Println("")
+	fmt.Println("Advanced Filtering Options:")
+	fmt.Println("  -limit <num>                Limit number of payloads to generate (0 = no limit)")
+	fmt.Println("  -min-success-rate <rate>    Minimum success rate filter (0.0-1.0)")
+	fmt.Println("  -complexity <level>         Filter by complexity: simple, medium, complex")
+	fmt.Println("  -max-response-time <dur>    Filter out slow payloads (e.g., 5s, 500ms)")
+	fmt.Println("  -filter-status <codes>      Filter by status codes (e.g., '200,404')")
+	fmt.Println("  -exclude-encodings <list>   Exclude encodings (e.g., 'base64,hex')")
+	fmt.Println("  -only-successful            Only show payloads that bypassed WAF")
+	fmt.Println("")
 	fmt.Println("Features:")
 	fmt.Println("  • Interactive menu-driven interface (when no flags provided)")
 	fmt.Println("  • Configuration file support (YAML/JSON)")
@@ -535,6 +561,11 @@ func showHelp() {
 	fmt.Println("")
 	fmt.Println("  # JSON output for automation")
 	fmt.Println("  obfuskit -attack sqli -payload \"' OR 1=1 --\" -url https://example.com -format json")
+	fmt.Println("")
+	fmt.Println("  # Advanced filtering examples")
+	fmt.Println("  obfuskit -attack xss -payload '<script>alert(1)</script>' -limit 100 -complexity simple")
+	fmt.Println("  obfuskit -attack sqli -url https://target.com -only-successful -max-response-time 2s")
+	fmt.Println("  obfuskit -attack all -payload-file payloads.txt -exclude-encodings 'base64,hex'")
 	fmt.Println("")
 	fmt.Println("  # Use payload file and save to output")
 	fmt.Println("  obfuskit -attack xss -payload-file payloads.txt -output results.txt")
