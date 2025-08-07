@@ -8,7 +8,7 @@ _obfuskit_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Main options
-    opts="-help -config -generate-config -server -attack -payload -payload-file -url -url-file -output -level -encoding -report -threads -format -progress -limit -min-success-rate -complexity -max-response-time -filter-status -exclude-encodings -only-successful"
+    opts="-help -config -generate-config -server -attack -payload -payload-file -url -url-file -output -level -encoding -report -threads -format -progress -limit -min-success-rate -complexity -max-response-time -filter-status -exclude-encodings -only-successful -fingerprint -waf-report"
     
     # Attack types
     attack_types="xss sqli sql unixcmdi unix wincmdi windows oscmdi os path fileaccess file ldapi ldap ssrf xxe generic all"

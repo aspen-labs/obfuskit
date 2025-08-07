@@ -49,6 +49,10 @@ func main() {
 	excludeEncodingsFlag := flag.String("exclude-encodings", "", "Exclude specific encodings (e.g., 'base64,hex')")
 	onlySuccessfulFlag := flag.Bool("only-successful", false, "Only show payloads that successfully bypassed WAF")
 
+	// WAF fingerprinting options
+	fingerprintFlag := flag.Bool("fingerprint", false, "Enable WAF fingerprinting and adaptive evasion")
+	showWAFReportFlag := flag.Bool("waf-report", false, "Show detailed WAF analysis report")
+
 	flag.Parse()
 
 	// Show help if requested
@@ -114,6 +118,10 @@ func main() {
 
 		// Store filter options in config for later use
 		config.FilterOptions = filterOptions
+
+		// Store WAF fingerprinting options
+		config.EnableFingerprinting = *fingerprintFlag
+		config.ShowWAFReport = *showWAFReportFlag
 	} else if *configFlag != "" {
 		config, configErr = cmd.LoadConfig(*configFlag)
 		if configErr != nil {
@@ -530,6 +538,10 @@ func showHelp() {
 	fmt.Println("  -exclude-encodings <list>   Exclude encodings (e.g., 'base64,hex')")
 	fmt.Println("  -only-successful            Only show payloads that bypassed WAF")
 	fmt.Println("")
+	fmt.Println("WAF Intelligence Options:")
+	fmt.Println("  -fingerprint                Enable WAF fingerprinting and adaptive evasion")
+	fmt.Println("  -waf-report                 Show detailed WAF analysis report")
+	fmt.Println("")
 	fmt.Println("Features:")
 	fmt.Println("  • Interactive menu-driven interface (when no flags provided)")
 	fmt.Println("  • Configuration file support (YAML/JSON)")
@@ -566,6 +578,10 @@ func showHelp() {
 	fmt.Println("  obfuskit -attack xss -payload '<script>alert(1)</script>' -limit 100 -complexity simple")
 	fmt.Println("  obfuskit -attack sqli -url https://target.com -only-successful -max-response-time 2s")
 	fmt.Println("  obfuskit -attack all -payload-file payloads.txt -exclude-encodings 'base64,hex'")
+	fmt.Println("")
+	fmt.Println("  # WAF fingerprinting and adaptive evasion")
+	fmt.Println("  obfuskit -attack xss -url https://target.com -fingerprint -waf-report")
+	fmt.Println("  obfuskit -attack sqli -url https://target.com -fingerprint -threads 3")
 	fmt.Println("")
 	fmt.Println("  # Use payload file and save to output")
 	fmt.Println("  obfuskit -attack xss -payload-file payloads.txt -output results.txt")

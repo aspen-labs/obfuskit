@@ -134,4 +134,9 @@ type Config struct {
 
 	// Advanced filtering options (CLI only, not part of YAML/JSON config)
 	FilterOptions interface{} `yaml:"-" json:"-"`
+
+	// WAF fingerprinting options (CLI only, not part of YAML/JSON config)
+	EnableFingerprinting bool        `yaml:"-" json:"-"`
+	ShowWAFReport        bool        `yaml:"-" json:"-"`
+	WAFFingerprint       interface{} `yaml:"-" json:"-"`
 }

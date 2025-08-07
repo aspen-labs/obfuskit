@@ -11,6 +11,7 @@ import (
 	"obfuskit/cmd"
 	"obfuskit/internal/model"
 	"obfuskit/internal/util"
+	"obfuskit/internal/waf"
 	"obfuskit/request"
 	"obfuskit/types"
 )
@@ -87,6 +88,27 @@ func HandleSendToURL(results *model.TestResults, level types.EvasionLevel, showP
 	config, ok := results.Config.(*types.Config)
 	if !ok {
 		return fmt.Errorf("invalid config type in TestResults")
+	}
+
+	// Perform WAF fingerprinting if enabled
+	var wafFingerprint *waf.WAFFingerprint
+	if config.EnableFingerprinting {
+		var err error
+		wafFingerprint, err = waf.FingerprintWAF(config.Target.URL)
+		if err != nil {
+			fmt.Printf("⚠️  WAF fingerprinting failed: %v\n", err)
+		} else {
+			// Store fingerprint in config for adaptive evasion
+			config.WAFFingerprint = wafFingerprint
+
+			// Show WAF report if requested
+			if config.ShowWAFReport {
+				fmt.Println(waf.GenerateWAFReport(wafFingerprint))
+			}
+
+			// Adapt evasion strategy based on WAF type
+			adaptEvasionStrategy(config, wafFingerprint)
+		}
 	}
 
 	// First generate the payloads
@@ -392,4 +414,37 @@ func GetTotalVariants(results *model.TestResults) int {
 		total += len(pr.Variants)
 	}
 	return total
+}
+
+// adaptEvasionStrategy adapts the evasion strategy based on detected WAF
+func adaptEvasionStrategy(config *types.Config, fingerprint *waf.WAFFingerprint) {
+	if fingerprint == nil {
+		return
+	}
+
+	fmt.Printf("🎯 Adapting evasion strategy for %s WAF\n", fingerprint.WAFType)
+
+	// Get optimal evasions for detected WAF
+	optimalEvasions := waf.GetOptimalEvasions(fingerprint.WAFType)
+
+	// If we have filter options, update the excluded encodings to prioritize optimal ones
+	if config.FilterOptions != nil {
+		if filterOptions, ok := config.FilterOptions.(*util.FilterOptions); ok {
+			// Remove optimal evasions from excluded list if they were excluded
+			for _, optimal := range optimalEvasions {
+				for i, excluded := range filterOptions.ExcludeEncodings {
+					if strings.Contains(strings.ToLower(excluded), strings.ToLower(optimal)) {
+						// Remove this exclusion
+						filterOptions.ExcludeEncodings = append(filterOptions.ExcludeEncodings[:i], filterOptions.ExcludeEncodings[i+1:]...)
+						break
+					}
+				}
+			}
+
+			fmt.Printf("🔧 Prioritizing evasion techniques: %s\n", strings.Join(optimalEvasions, ", "))
+		}
+	}
+
+	// Store optimal evasions in config for potential future use
+	// This could be used to influence payload generation order
 }

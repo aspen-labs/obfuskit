@@ -125,6 +125,9 @@ ObfusKit offers three ways to use the tool:
 # ⚡  Performance-optimized testing
 ./obfuskit -attack sqli -url https://target.com -only-successful -max-response-time 2s
 
+# 🛡️  WAF fingerprinting and adaptive evasion
+./obfuskit -attack xss -url https://target.com -fingerprint -waf-report
+
 ```
 
 #### Available CLI Flags:
@@ -149,6 +152,10 @@ ObfusKit offers three ways to use the tool:
 - `-filter-status <codes>` - Filter by status codes (e.g., '200,404')
 - `-exclude-encodings <list>` - Exclude encodings (e.g., 'base64,hex')
 - `-only-successful` - Only show payloads that bypassed WAF
+
+**WAF Intelligence Options:**
+- `-fingerprint` - Enable WAF fingerprinting and adaptive evasion
+- `-waf-report` - Show detailed WAF analysis report
 
 ### 2. Configuration Files
 
@@ -287,6 +294,32 @@ Fine-tune your testing with sophisticated filtering options:
 ./obfuskit -attack all -url-file targets.txt -min-success-rate 0.3
 ```
 
+### 🛡️ **WAF Intelligence & Adaptive Evasion**
+
+Automatically detect and adapt to Web Application Firewalls:
+
+```bash
+# Auto-detect WAF and adapt evasion strategy
+./obfuskit -attack xss -url https://target.com -fingerprint
+
+# Get detailed WAF analysis report
+./obfuskit -attack sqli -url https://target.com -fingerprint -waf-report
+
+# Combine with other features for maximum effectiveness
+./obfuskit -attack xss,sqli -url https://target.com -fingerprint -threads 5 -progress
+
+# Batch WAF analysis across multiple targets
+./obfuskit -attack xss -url-file targets.txt -fingerprint -waf-report
+```
+
+**Supported WAF Detection:**
+- CloudFlare, AWS WAF, Azure WAF
+- Akamai, ModSecurity, Imperva
+- F5 BIG-IP, Barracuda, Fortinet
+- Sucuri, Wallarm, Radware
+- And more...
+```
+
 ### 🚀 **Auto-completion Support**
 
 Install shell auto-completion for better CLI experience:
@@ -418,8 +451,8 @@ docker run obfuskit:latest -attack xss -payload '<script>alert(1)</script>'
 - **✅ Multiple Attack Types** - Combined attack testing (e.g., `-attack xss,sqli,unixcmdi`)
 - **✅ Advanced Filtering** - Filter by complexity, limit payloads, exclude encodings, response criteria
 
-### 🚧 In Progress (v2.1)
-- **🔄 WAF Fingerprinting** - Automatic WAF detection and tailored evasion strategies
+### ✅ Recently Completed (v2.1)
+- **✅ WAF Fingerprinting** - Automatic WAF detection with adaptive evasion strategies
 
 ### 🎯 Planned Features (v3.0)
 - **📈 Rate Limiting** - Intelligent request throttling and retry mechanisms

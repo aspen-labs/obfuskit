@@ -29,7 +29,9 @@ _obfuskit() {
         '-max-response-time[Max response time]:time:(1s 2s 5s 10s 500ms)' \
         '-filter-status[Filter by status codes]:codes:(200 404 403 500)' \
         '-exclude-encodings[Exclude encodings]:encodings:(base64 hex unicode url html)' \
-        '-only-successful[Only show successful bypasses]'
+        '-only-successful[Only show successful bypasses]' \
+        '-fingerprint[Enable WAF fingerprinting and adaptive evasion]' \
+        '-waf-report[Show detailed WAF analysis report]'
 }
 
 _obfuskit_attack_types() {
