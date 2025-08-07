@@ -1,0 +1,20 @@
+# Command Injection Testing Configuration
+# This configuration demonstrates command injection testing for Unix and Windows
+
+action: "Generate Payloads"
+attack_type: "unixcmdi"
+evasion_level: "Advanced"
+
+payload:
+  source: "Generated"
+  method: "Commands"
+  encoding: "Auto"
+
+target:
+  method: "File"
+  file: "command_injection_payloads.txt"
+
+report_type: "CSV"
+
+# Example usage:
+# ./obfuskit -config examples/configs/command-injection-testing.yaml

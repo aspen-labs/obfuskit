@@ -1,0 +1,23 @@
+# Example Target URLs for Batch Testing
+# Replace these with your actual test targets
+
+# Development environments
+https://dev-app.example.com/api/search
+https://staging.example.com/login
+https://test-env.example.com/form
+
+# Different endpoints
+https://api.example.com/v1/users
+https://api.example.com/v2/search
+https://app.example.com/dashboard
+https://admin.example.com/panel
+
+# Local testing
+http://localhost:8080/vulnerable
+http://127.0.0.1:3000/test
+http://localhost:9090/search
+
+# Security testing labs
+https://dvwa.local/vulnerabilities/xss_r/
+https://bwapp.local/sqli_1.php
+https://webgoat.local/WebGoat/start.mvc

@@ -1,0 +1,19 @@
+# Enterprise Batch Testing Configuration
+# This configuration demonstrates enterprise-scale testing with multiple URLs
+
+action: "Use Existing Payloads"
+attack_type: "all"
+evasion_level: "Advanced"
+
+payload:
+  source: "From File"
+  file_path: "examples/payloads/enterprise_payloads.txt"
+
+target:
+  method: "File"
+  file: "batch_test_results.html"
+
+report_type: "HTML"
+
+# Note: For batch URL testing, use the CLI flag -url-file instead:
+# ./obfuskit -config examples/configs/enterprise-batch-testing.yaml -url-file examples/urls/targets.txt -threads 10 -progress

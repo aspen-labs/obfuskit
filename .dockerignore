@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+obfuskit
+*.exe
+
+# Logs
+*.log
+
+# Test outputs
+payloads_output.txt
+payloads_simple.txt
+*.json
+*.html
+*.pdf
+*.csv
+
+# Temporary files
+tmp/
+temp/
+.tmp
+
+# Dependencies (will be downloaded in container)
+vendor/
+
+# Benchmark results
+benchmark_results_*/
+batch_test_results_*/
+
+# IDE specific
+.vscode/
+.idea/
+
+# Editor backups
+*~
+*.bak

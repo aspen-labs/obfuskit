@@ -1,0 +1,19 @@
+# Comprehensive WAF Testing Configuration
+# This configuration demonstrates multi-attack type testing with file input
+
+action: "Send to URL"
+attack_type: "generic"  # Will test multiple attack types
+evasion_level: "Advanced"
+
+payload:
+  source: "From File"
+  file_path: "examples/payloads/comprehensive_attacks.txt"
+
+target:
+  method: "URL"
+  url: "https://waf-test-target.example.com/"
+
+report_type: "HTML"
+
+# Example usage:
+# ./obfuskit -config examples/configs/comprehensive-waf-testing.yaml

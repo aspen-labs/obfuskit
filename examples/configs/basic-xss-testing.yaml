@@ -1,0 +1,20 @@
+# Basic XSS Testing Configuration
+# This configuration demonstrates simple XSS payload generation and testing
+
+action: "Generate Payloads"
+attack_type: "xss"
+evasion_level: "Medium"
+
+payload:
+  source: "Generated"
+  method: "Auto"
+  encoding: "Auto"
+
+target:
+  method: "File"
+  file: "xss_payloads.txt"
+
+report_type: "Pretty Terminal"
+
+# Example usage:
+# ./obfuskit -config examples/configs/basic-xss-testing.yaml

