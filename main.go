@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"obfuskit/cmd"
+	"obfuskit/internal/genai"
+	"obfuskit/internal/logging"
 	"obfuskit/internal/model"
 	"obfuskit/internal/payload"
 	"obfuskit/internal/performance"
@@ -23,6 +25,8 @@ import (
 )
 
 func main() {
+	// Initialize logging (default ERROR, override via env)
+	logging.InitFromEnv()
 	// Define command line flags
 	helpFlag := flag.Bool("help", false, "Show help information")
 	versionFlag := flag.Bool("version", false, "Show version information")
@@ -61,6 +65,15 @@ func main() {
 	// Performance monitoring options
 	showPerfStatsFlag := flag.Bool("perf-stats", false, "Show detailed performance statistics")
 	benchmarkFlag := flag.Bool("benchmark", false, "Run in benchmark mode with detailed metrics")
+
+	// AI/GenAI options
+	enableAIFlag := flag.Bool("ai", false, "Enable AI-powered payload generation")
+	aiProviderFlag := flag.String("ai-provider", "openai", "AI provider (openai, anthropic, local, huggingface)")
+	aiModelFlag := flag.String("ai-model", "", "AI model to use (auto-detected if not specified)")
+	aiConfigFlag := flag.String("ai-config", "", "Path to AI configuration file")
+	aiCountFlag := flag.Int("ai-count", 10, "Number of AI-generated payloads")
+	aiCreativityFlag := flag.Float64("ai-creativity", 0.7, "AI creativity level (0.0-1.0)")
+	aiContextFlag := flag.String("ai-context", "", "Additional context for AI generation")
 
 	flag.Parse()
 
@@ -125,12 +138,14 @@ func main() {
 	// Check if simple CLI flags are used
 	if hasSimpleCLIFlags(*attackTypeFlag, *payloadFlag, *payloadFileFlag, *urlFlag, *urlFileFlag) {
 		config, configErr = createConfigFromCLIFlags(*attackTypeFlag, *payloadFlag, *payloadFileFlag,
-			*urlFlag, *urlFileFlag, *outputFlag, *levelFlag, *encodingFlag, *reportFlag, *threadsFlag, *formatFlag, *progressFlag)
+			*urlFlag, *urlFileFlag, *outputFlag, *levelFlag, *encodingFlag, *reportFlag, *threadsFlag, *formatFlag, *progressFlag,
+			*enableAIFlag, *aiProviderFlag, *aiModelFlag, *aiConfigFlag, *aiCountFlag, *aiCreativityFlag, *aiContextFlag)
 		if configErr != nil {
 			log.Fatalf("Invalid CLI arguments: %v", configErr)
 		}
 		fmt.Print(version.GetStartupBanner())
-		fmt.Println("🚀 Starting ObfusKit with command line arguments...")
+		// Reduce verbosity by default; only info if user opts in via env
+		logging.Infoln("🚀 Starting ObfusKit with command line arguments...")
 
 		// Create filter options from CLI flags
 		filterOptions := util.CreateFilterOptions(*limitFlag, *minSuccessRateFlag, *complexityFlag,
@@ -256,7 +271,8 @@ func hasSimpleCLIFlags(attackType, payload, payloadFile, url, urlFile string) bo
 }
 
 // createConfigFromCLIFlags creates a configuration from CLI flags
-func createConfigFromCLIFlags(attackType, payload, payloadFile, url, urlFile, output, level, encoding, report string, threads int, format string, progress bool) (*types.Config, error) {
+func createConfigFromCLIFlags(attackType, payload, payloadFile, url, urlFile, output, level, encoding, report string, threads int, format string, progress bool,
+	enableAI bool, aiProvider, aiModel, aiConfig string, aiCount int, aiCreativity float64, aiContext string) (*types.Config, error) {
 	config := &types.Config{}
 
 	// Validate attack type
@@ -427,6 +443,36 @@ func createConfigFromCLIFlags(attackType, payload, payloadFile, url, urlFile, ou
 		config.ReportType = types.ReportTypeAll
 	default:
 		return nil, fmt.Errorf("unsupported report format '%s'. Supported formats: pretty, html, pdf, csv, nuclei, json, auto, all", report)
+	}
+
+	// Configure AI if enabled
+	if enableAI {
+		config.EnableAI = true
+		config.AIContext = aiContext
+
+		// Load AI configuration
+		aiConfigObj, err := genai.LoadConfig(aiConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load AI config: %v", err)
+		}
+
+		// Override with CLI flags if provided
+		if aiProvider != "" {
+			aiConfigObj.Provider = aiProvider
+		}
+		if aiModel != "" {
+			aiConfigObj.Model = aiModel
+		}
+
+		// Validate AI configuration
+		if err := genai.ValidateConfig(aiConfigObj); err != nil {
+			return nil, fmt.Errorf("invalid AI configuration: %v", err)
+		}
+
+		config.AIConfig = aiConfigObj
+
+		fmt.Printf("🤖 AI Generation: %s (%s) | Count: %d | Creativity: %.1f\n",
+			aiConfigObj.Provider, aiConfigObj.Model, aiCount, aiCreativity)
 	}
 
 	return config, nil
@@ -608,6 +654,15 @@ func showHelp() {
 	fmt.Println("  -perf-stats                 Show detailed performance statistics")
 	fmt.Println("  -benchmark                  Run in benchmark mode with comprehensive metrics")
 	fmt.Println("")
+	fmt.Println("🤖 AI-Powered Generation:")
+	fmt.Println("  -ai                         Enable AI-powered payload generation")
+	fmt.Println("  -ai-provider <provider>     AI provider (openai, anthropic, local, huggingface)")
+	fmt.Println("  -ai-model <model>           Specific AI model to use")
+	fmt.Println("  -ai-config <file>           Path to AI configuration file")
+	fmt.Println("  -ai-count <number>          Number of AI-generated payloads (default: 10)")
+	fmt.Println("  -ai-creativity <0.0-1.0>    AI creativity level (default: 0.7)")
+	fmt.Println("  -ai-context <text>          Additional context for AI generation")
+	fmt.Println("")
 	fmt.Println("Features:")
 	fmt.Println("  • Interactive menu-driven interface (when no flags provided)")
 	fmt.Println("  • Configuration file support (YAML/JSON)")
@@ -627,6 +682,10 @@ func showHelp() {
 	fmt.Println("")
 	fmt.Println("  # Multiple attack types")
 	fmt.Println("  obfuskit -attack xss,sqli,unixcmdi -payload '<script>alert(1)</script>'")
+	fmt.Println("")
+	fmt.Println("  # 🤖 AI-powered payload generation")
+	fmt.Println("  obfuskit -attack xss -ai -ai-count 20 -ai-creativity 0.9")
+	fmt.Println("  obfuskit -attack sqli -url https://example.com -ai -fingerprint")
 	fmt.Println("")
 	fmt.Println("  # Test against single URL")
 	fmt.Println("  obfuskit -attack xss -payload '<script>alert(1)</script>' -url https://example.com")

@@ -3,10 +3,10 @@ package server
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 
 	"obfuskit/cmd"
+	"obfuskit/internal/logging"
 	"obfuskit/internal/model"
 	"obfuskit/internal/util"
 	"obfuskit/types"
@@ -28,15 +28,17 @@ func ProcessServerRequestHandler(w http.ResponseWriter, r *http.Request, config 
 		http.Error(w, "Only POST supported", http.StatusMethodNotAllowed)
 		return
 	}
-	log.Println("Received api request")
+	logging.Debugln("Received api request")
 	var req model.PayloadRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Invalid body", http.StatusBadRequest)
+		logging.Errorln("Invalid body for server request:", err)
 		return
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		logging.Errorln("Invalid JSON for server request:", err)
 		return
 	}
 	payload := req.Payload
@@ -50,7 +52,7 @@ func ProcessServerRequestHandler(w http.ResponseWriter, r *http.Request, config 
 	}
 	evasions, exists := cmd.GetEvasionsForPayload(attackType)
 	if !exists {
-		log.Println("No evasions found for attack type: ", attackType)
+		logging.Warnln("No evasions found for attack type:", attackType)
 		evasions = []types.PayloadEncoding{
 			types.PayloadEncodingBase64,
 			types.PayloadEncodingHex,
@@ -76,9 +78,35 @@ func ProcessServerRequestHandler(w http.ResponseWriter, r *http.Request, config 
 			})
 		}
 	}
+	// Prepare baseline preview if request/response bodies were provided
+	var baseline *model.Baseline
+	if req.RequestPayload != "" || req.ResponsePayload != "" {
+		// Create short previews to avoid huge responses
+		const maxPreview = 256
+		preview := func(s string) string {
+			if len(s) <= maxPreview {
+				return s
+			}
+			return s[:maxPreview]
+		}
+		baseline = &model.Baseline{
+			RequestPreview:  preview(req.RequestPayload),
+			ResponsePreview: preview(req.ResponsePayload),
+			RequestLength:   len(req.RequestPayload),
+			ResponseLength:  len(req.ResponsePayload),
+		}
+	}
+
+	// If AI is enabled, use baseline context for enhanced generation
+	if config != nil && config.EnableAI {
+		logging.Infoln("AI enabled - using baseline context for enhanced payload generation")
+		// The baseline context will be used by the AI engine in payload generation
+	}
+
 	resp := model.PayloadResponse{
 		Status:   "ok",
 		Payloads: results,
+		Baseline: baseline,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)

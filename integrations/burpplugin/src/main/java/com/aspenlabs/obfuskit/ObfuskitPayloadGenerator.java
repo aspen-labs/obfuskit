@@ -35,8 +35,21 @@ public class ObfuskitPayloadGenerator implements PayloadGenerator {
         api.logging().logToOutput("Endpoint: " + endpoint);
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
 
-        PayloadRequest payloadRequest = new PayloadRequest(insertionPoint.baseValue().toString());
-        org.json.JSONObject jsonObj = new org.json.JSONObject(payloadRequest);
+        // Build baseline context for AI: raw serialized data before mutation and empty response
+        // placeholder
+        String baseValue = insertionPoint.baseValue().toString();
+        String requestBaseline = BaselineStore.getLastRequestRaw();
+        if (requestBaseline == null || requestBaseline.isEmpty()) {
+          requestBaseline = baseValue; // fallback to original fragment
+        }
+        String responseBaseline = BaselineStore.getLastResponseRaw();
+        // Build JSON explicitly to ensure snake_case keys expected by server
+        org.json.JSONObject jsonObj = new org.json.JSONObject();
+        jsonObj.put("payload", baseValue);
+        jsonObj.put("request_payload", requestBaseline);
+        if (!responseBaseline.isEmpty()) {
+          jsonObj.put("response_payload", responseBaseline);
+        }
         String jsonBody = jsonObj.toString();
 
         HttpRequest request =

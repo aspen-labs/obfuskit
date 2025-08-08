@@ -46,6 +46,12 @@ public class ObfuskitPayloadProcessor implements PayloadProcessor {
     String rebuiltDataParameter = prefix + payloadData.currentPayload() + suffix;
     ByteArray reserializedDataParameter = urlUtils.encode(base64Utils.encode(rebuiltDataParameter));
 
+    // Capture baseline for AI context use in generator
+    try {
+      BaselineStore.setLastRequestRaw(dataParameter);
+    } catch (Exception ignored) {
+    }
+
     return usePayload(reserializedDataParameter);
   }
 

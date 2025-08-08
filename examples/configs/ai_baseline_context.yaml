@@ -1,0 +1,66 @@
+# AI Integration with Baseline Context Example
+# This configuration demonstrates how to use AI-powered payload generation
+# with baseline request/response context for enhanced evasion
+
+action: "generate"
+attack_type: "xss"
+evasion_level: "high"
+payload:
+  source: "Enter Manually"
+  custom:
+    - "<script>alert('test')</script>"
+    - "javascript:alert('test')"
+
+target:
+  method: "url"
+  url: "https://example.com/vulnerable-endpoint"
+
+# AI Configuration with Baseline Context
+enable_ai: true
+ai_context: |
+  # Example baseline context that would be captured from Burp plugin
+  # This shows the raw request/response data for AI context
+  REQUEST_BASELINE:
+  POST /api/search HTTP/1.1
+  Host: example.com
+  Content-Type: application/x-www-form-urlencoded
+  
+  query=user_input&filter=active&sort=name
+  
+  RESPONSE_BASELINE:
+  HTTP/1.1 200 OK
+  Content-Type: application/json
+  
+  {"results": [{"id": 1, "name": "test"}], "total": 1}
+
+# AI Provider Configuration
+ai_config:
+  provider: "openai"
+  model: "gpt-4"
+  api_key: "${OPENAI_API_KEY}"
+  count: 15
+  creativity: 0.8
+  max_tokens: 2000
+  temperature: 0.7
+
+# Advanced Filtering
+filter_options:
+  min_success_rate: 0.3
+  complexity: "medium"
+  response_time: 5000
+  status_codes: [200, 302, 404]
+  exclude_encodings: ["doubleurl"]
+
+# Performance Settings
+threads: 10
+show_progress: true
+show_perf_stats: true
+
+# Output Configuration
+output:
+  format: "json"
+  file: "ai_baseline_results.json"
+
+# WAF Intelligence
+enable_fingerprinting: true
+show_waf_report: true

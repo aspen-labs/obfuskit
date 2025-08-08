@@ -91,7 +91,6 @@ This major release transforms ObfusKit from a basic evasion tool into a **world-
 
 ### **Docker Support**
 - Production-ready multi-stage Dockerfile
-- Docker Compose stack with Redis and Nginx
 - SSL-enabled reverse proxy configuration
 - Automated build and deployment scripts
 - Kubernetes deployment examples

@@ -1,0 +1,12 @@
+{
+  "provider": "local",
+  "api_endpoint": "http://localhost:11434/api/generate",
+  "model": "codellama:7b-instruct",
+  "max_tokens": 1000,
+  "temperature": 0.8,
+  "timeout": "120s",
+  "max_retries": 2,
+  "enable_caching": false,
+  "enable_analytics": true,
+  "enable_quality_filter": true
+}

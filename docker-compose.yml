@@ -10,12 +10,12 @@ services:
     # Environment variables
     environment:
       - OBFUSKIT_MODE=server
-      - OBFUSKIT_PORT=8080
+      - OBFUSKIT_PORT=8888
       - OBFUSKIT_HOST=0.0.0.0
     
     # Port mapping
     ports:
-      - "8080:8080"
+      - "8888:8888"
     
     # Volume mounts for persistent data
     volumes:
@@ -86,8 +86,7 @@ services:
     
     # Port mapping
     ports:
-      - "80:80"
-      - "443:443"
+      - "8888:8888"
     
     # Volume mounts
     volumes:

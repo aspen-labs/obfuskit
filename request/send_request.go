@@ -31,19 +31,61 @@ const (
 	LogLevelError = "ERROR"
 )
 
-type Logger struct {
-	debug *log.Logger
-	info  *log.Logger
-	warn  *log.Logger
-	error *log.Logger
+type levelLogger struct {
+	l       *log.Logger
+	enabled bool
 }
 
-func NewLogger(out *os.File) *Logger {
+func (ll *levelLogger) Printf(format string, v ...interface{}) {
+	if ll != nil && ll.enabled {
+		ll.l.Printf(format, v...)
+	}
+}
+
+func (ll *levelLogger) Println(v ...interface{}) {
+	if ll != nil && ll.enabled {
+		ll.l.Println(v...)
+	}
+}
+
+func (ll *levelLogger) Writer() *os.File {
+	// Underlying Writer may not always be *os.File; fall back to os.Stdout
+	if ll == nil || ll.l == nil {
+		return os.Stdout
+	}
+	if w, ok := ll.l.Writer().(*os.File); ok {
+		return w
+	}
+	return os.Stdout
+}
+
+type Logger struct {
+	debug *levelLogger
+	info  *levelLogger
+	warn  *levelLogger
+	error *levelLogger
+}
+
+func NewLogger(out *os.File) *Logger { // default to ERROR
+	return NewLoggerWithLevel(out, os.Getenv("OBFUSKIT_LOG_LEVEL"))
+}
+
+func NewLoggerWithLevel(out *os.File, level string) *Logger {
+	// Normalize level
+	lvl := strings.ToUpper(strings.TrimSpace(level))
+	if lvl == "" {
+		lvl = LogLevelError
+	}
+	enableDebug := lvl == LogLevelDebug
+	enableInfo := enableDebug || lvl == LogLevelInfo
+	enableWarn := enableInfo || lvl == LogLevelWarn
+	// error always enabled
+
 	return &Logger{
-		debug: log.New(out, "[DEBUG] ", log.Ldate|log.Ltime|log.Lshortfile),
-		info:  log.New(out, "[INFO] ", log.Ldate|log.Ltime|log.Lshortfile),
-		warn:  log.New(out, "[WARN] ", log.Ldate|log.Ltime|log.Lshortfile),
-		error: log.New(out, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile),
+		debug: &levelLogger{l: log.New(out, "[DEBUG] ", log.Ldate|log.Ltime|log.Lshortfile), enabled: enableDebug},
+		info:  &levelLogger{l: log.New(out, "[INFO] ", log.Ldate|log.Ltime|log.Lshortfile), enabled: enableInfo},
+		warn:  &levelLogger{l: log.New(out, "[WARN] ", log.Ldate|log.Ltime|log.Lshortfile), enabled: enableWarn},
+		error: &levelLogger{l: log.New(out, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile), enabled: true},
 	}
 }
 
@@ -874,7 +916,7 @@ type TestConfig struct {
 
 func DefaultConfig() *TestConfig {
 	return &TestConfig{
-		LogLevel:       LogLevelInfo,
+		LogLevel:       LogLevelError,
 		OutputFormat:   "text",
 		RequestTimeout: 10 * time.Second,
 		Concurrency:    5,
@@ -1046,10 +1088,10 @@ func worker(id int, jobs <-chan string, results chan<- []TestResult, targetURL s
 	}
 
 	workerLogger := &Logger{
-		debug: log.New(logger.debug.Writer(), fmt.Sprintf("[DEBUG][Worker-%d] ", id), log.Ltime),
-		info:  log.New(logger.info.Writer(), fmt.Sprintf("[INFO][Worker-%d] ", id), log.Ltime),
-		warn:  log.New(logger.warn.Writer(), fmt.Sprintf("[WARN][Worker-%d] ", id), log.Ltime),
-		error: log.New(logger.error.Writer(), fmt.Sprintf("[ERROR][Worker-%d] ", id), log.Ltime),
+		debug: &levelLogger{l: log.New(logger.debug.Writer(), fmt.Sprintf("[DEBUG][Worker-%d] ", id), log.Ltime), enabled: logger.debug.enabled},
+		info:  &levelLogger{l: log.New(logger.info.Writer(), fmt.Sprintf("[INFO][Worker-%d] ", id), log.Ltime), enabled: logger.info.enabled},
+		warn:  &levelLogger{l: log.New(logger.warn.Writer(), fmt.Sprintf("[WARN][Worker-%d] ", id), log.Ltime), enabled: logger.warn.enabled},
+		error: &levelLogger{l: log.New(logger.error.Writer(), fmt.Sprintf("[ERROR][Worker-%d] ", id), log.Ltime), enabled: true},
 	}
 
 	for payload := range jobs {

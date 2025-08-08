@@ -31,7 +31,13 @@ func GenerateSummary(results *model.TestResults) {
 		summary.EvasionTypes = append(summary.EvasionTypes, evasionType)
 	}
 
-	for _, reqResult := range results.RequestResults {
+	// Summary should reflect unfiltered baseline
+	baseRequests := results.RequestResults
+	if len(results.AllRequestResults) > 0 {
+		baseRequests = results.AllRequestResults
+	}
+
+	for _, reqResult := range baseRequests {
 		if !reqResult.Blocked {
 			summary.SuccessfulTests++
 		} else {
@@ -47,11 +53,11 @@ func GenerateSummary(results *model.TestResults) {
 	fmt.Printf("Attack Types: %s\n", strings.Join(summary.AttackTypes, ", "))
 	fmt.Printf("Evasion Types: %s\n", strings.Join(summary.EvasionTypes, ", "))
 
-	if len(results.RequestResults) > 0 {
+	if len(baseRequests) > 0 {
 		fmt.Printf("Successful Tests: %d\n", summary.SuccessfulTests)
 		fmt.Printf("Failed Tests: %d\n", summary.FailedTests)
 		fmt.Printf("Success Rate: %.2f%%\n",
-			float64(summary.SuccessfulTests)/float64(len(results.RequestResults))*100)
+			float64(summary.SuccessfulTests)/float64(len(baseRequests))*100)
 	}
 	fmt.Println(strings.Repeat("=", 60))
 }
@@ -87,7 +93,12 @@ func GenerateReports(results *model.TestResults) error {
 				fmt.Println("✅ HTML report generated: waf_test_report.html")
 			}
 		case types.ReportTypePretty:
-			report.PrintTerminalReport(results.RequestResults)
+			// Use baseline for summary, filtered for details if present
+			baseRequests := results.RequestResults
+			if len(results.AllRequestResults) > 0 {
+				baseRequests = results.AllRequestResults
+			}
+			report.PrintTerminalReportWithBaseline(results.RequestResults, baseRequests)
 			fmt.Println("✅ Terminal report displayed above")
 		case types.ReportTypePDF:
 			err := report.GeneratePDFReport(results.RequestResults, "waf_test_report.pdf")
@@ -234,8 +245,12 @@ func GenerateJSONReport(results *model.TestResults) error {
 	jsonReport.Summary.AttackTypes = summary.AttackTypes
 	jsonReport.Summary.EvasionTypes = summary.EvasionTypes
 
-	if len(results.RequestResults) > 0 {
-		jsonReport.Summary.SuccessRate = float64(summary.SuccessfulTests) / float64(len(results.RequestResults)) * 100
+	baseRequests := results.RequestResults
+	if len(results.AllRequestResults) > 0 {
+		baseRequests = results.AllRequestResults
+	}
+	if len(baseRequests) > 0 {
+		jsonReport.Summary.SuccessRate = float64(summary.SuccessfulTests) / float64(len(baseRequests)) * 100
 	}
 
 	// Payload Results
@@ -253,8 +268,8 @@ func GenerateJSONReport(results *model.TestResults) error {
 		})
 	}
 
-	// Request Results
-	for _, result := range results.RequestResults {
+	// Request Results (use baseline for consistency with summary)
+	for _, result := range baseRequests {
 		jsonReport.RequestResults = append(jsonReport.RequestResults, struct {
 			Payload      string `json:"payload"`
 			URL          string `json:"url"`

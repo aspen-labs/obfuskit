@@ -18,7 +18,9 @@ type TestResults struct {
 	Config         interface{} // will be replaced with actual config type
 	PayloadResults []PayloadResults
 	RequestResults []request.TestResult
-	Summary        TestSummary
+	// AllRequestResults holds the unfiltered set for summary/report baselines
+	AllRequestResults []request.TestResult
+	Summary           TestSummary
 }
 
 type TestSummary struct {
@@ -33,6 +35,9 @@ type TestSummary struct {
 // PayloadRequest is the expected JSON format from api
 type PayloadRequest struct {
 	Payload string `json:"payload"`
+	// Optional: raw request/response payloads for baseline/context analysis
+	RequestPayload  string `json:"request_payload,omitempty"`
+	ResponsePayload string `json:"response_payload,omitempty"`
 }
 
 type EvadedPayload struct {
@@ -46,4 +51,14 @@ type EvadedPayload struct {
 type PayloadResponse struct {
 	Status   string          `json:"status"`
 	Payloads []EvadedPayload `json:"payloads"`
+	// Optional baseline/context echoes for client-side correlation/analysis
+	Baseline *Baseline `json:"baseline,omitempty"`
+}
+
+// Baseline contains basic analysis/echo of provided request/response payloads
+type Baseline struct {
+	RequestPreview  string `json:"request_preview,omitempty"`
+	ResponsePreview string `json:"response_preview,omitempty"`
+	RequestLength   int    `json:"request_length,omitempty"`
+	ResponseLength  int    `json:"response_length,omitempty"`
 }

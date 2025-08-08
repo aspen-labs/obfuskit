@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"obfuskit/cmd"
+	"obfuskit/internal/genai"
+	"obfuskit/internal/logging"
 	"obfuskit/internal/model"
 	"obfuskit/internal/util"
 	"obfuskit/internal/waf"
@@ -17,7 +19,7 @@ import (
 )
 
 func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel, showProgress bool, threads int) error {
-	fmt.Println("\n🔧 Generating payloads...")
+	logging.Infoln("\n🔧 Generating payloads...")
 
 	config, ok := results.Config.(*types.Config)
 	if !ok {
@@ -38,13 +40,68 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 	for _, attackType := range attackTypesToProcess {
 		basePayloads, err := LoadBasePayloads(attackType)
 		if err != nil {
-			fmt.Printf("Warning: Failed to load payloads for %s: %v\n", attackType, err)
+			logging.Warnf("Warning: Failed to load payloads for %s: %v\n", attackType, err)
 			continue
 		}
 
 		// Merge payloads from this attack type
 		for key, payloads := range basePayloads {
 			allBasePayloads[key] = append(allBasePayloads[key], payloads...)
+		}
+	}
+
+	// If AI is enabled, generate additional base payloads using GenAI
+	if config.EnableAI && config.AIConfig != nil {
+		aiCfg, ok := config.AIConfig.(*genai.Config)
+		if !ok {
+			fmt.Println("Warning: Invalid AI configuration; skipping AI generation")
+		} else {
+			engine := genai.NewEngine(aiCfg)
+			logging.Infoln("🤖 Using GenAI to generate additional base payloads...")
+
+			// Attempt to construct WAF context if available
+			var wafCtx *genai.WAFContext
+			if fp, ok := config.WAFFingerprint.(*waf.WAFFingerprint); ok && fp != nil {
+				wafCtx = &genai.WAFContext{
+					Vendor: string(fp.WAFType),
+				}
+			}
+
+			for _, attackType := range attackTypesToProcess {
+				req := &genai.PayloadGenerationRequest{
+					AttackType:      attackType,
+					TargetContext:   config.Target.URL,
+					WAFInfo:         wafCtx,
+					EvasionLevel:    string(level),
+					RequestBaseline: config.AIContext, // Pass baseline context for enhanced AI generation
+					Count:           10,
+					Creativity:      0.7,
+				}
+
+				// If user provided manual payload, seed as base
+				if config.Payload.Source == "Enter Manually" && len(config.Payload.Custom) > 0 {
+					req.BasePayload = config.Payload.Custom[0]
+				}
+
+				genResult, err := engine.GeneratePayloads(req)
+				if err != nil {
+					logging.Warnf("AI generation failed for %s: %v\n", attackType, err)
+					continue
+				}
+
+				added := 0
+				for _, gp := range genResult.Payloads {
+					if strings.TrimSpace(gp.Payload) == "" {
+						continue
+					}
+					allBasePayloads[string(attackType)] = append(allBasePayloads[string(attackType)], gp.Payload)
+					added++
+				}
+
+				if added > 0 {
+					logging.Infof("🤖 Added %d AI-generated base payloads for %s\n", added, attackType)
+				}
+			}
 		}
 	}
 
@@ -227,6 +284,11 @@ func HandleSendToURL(results *model.TestResults, level types.EvasionLevel, showP
 
 	if urlProgress != nil {
 		urlProgress.Finish()
+	}
+
+	// Preserve full set before filtering for consistent reporting baselines
+	if len(results.AllRequestResults) == 0 {
+		results.AllRequestResults = append(results.AllRequestResults, results.RequestResults...)
 	}
 
 	// Apply request result filtering if configured

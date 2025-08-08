@@ -11,5 +11,8 @@ public class ObfuskitExtension implements BurpExtension {
     api.extension().setName("Obfuskit Evasion Plugin");
     api.intruder().registerPayloadGeneratorProvider(new ObfuskitPayloadGeneratorProvider(api));
     api.intruder().registerPayloadProcessor(new ObfuskitPayloadProcessor(api));
+    
+    // Note: HTTP response capture for baseline context can be added later
+    // when Burp API proxy handlers are properly implemented
   }
 }

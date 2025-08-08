@@ -157,6 +157,15 @@ ObfusKit offers three ways to use the tool:
 - `-fingerprint` - Enable WAF fingerprinting and adaptive evasion
 - `-waf-report` - Show detailed WAF analysis report
 
+**🤖 AI-Powered Generation Options:**
+- `-ai` - Enable AI-powered payload generation
+- `-ai-provider <provider>` - AI provider (`openai`, `anthropic`, `local`, `huggingface`)
+- `-ai-model <model>` - Specific AI model to use
+- `-ai-config <file>` - Path to AI configuration file (JSON)
+- `-ai-count <number>` - Number of AI-generated base payloads to create (default: 10)
+- `-ai-creativity <0.0-1.0>` - Creativity/temperature (default: 0.7)
+- `-ai-context <text>` - Additional context for generation (e.g., target details)
+
 ### 2. Configuration Files
 
 Generate an example configuration file:
@@ -311,6 +320,63 @@ Automatically detect and adapt to Web Application Firewalls:
 # Batch WAF analysis across multiple targets
 ./obfuskit -attack xss -url-file targets.txt -fingerprint -waf-report
 ```
+
+### 🤖 **AI-Powered Payload Generation (GenAI)**
+
+Generate intelligent, context-aware base payloads using LLMs and blend them with ObfusKit's evasions:
+
+```bash
+# Quick AI generation with defaults (uses env/provider defaults)
+./obfuskit -attack xss -ai -ai-count 20 -ai-creativity 0.9
+
+# Specify provider and model explicitly
+./obfuskit -attack sqli -ai -ai-provider openai -ai-model gpt-4-turbo-preview -ai-count 15
+
+# Use Anthropic
+./obfuskit -attack xss -ai -ai-provider anthropic -ai-model claude-3-sonnet-20240229
+
+# Use local LLM (Ollama/LM Studio)
+./obfuskit -attack xss -ai -ai-provider local -ai-config examples/configs/ai-local.json
+
+# Provide additional context (e.g., URL or WAF hints)
+./obfuskit -attack xss -ai -ai-context "Target running CSP, reflected XSS likely in query"
+
+# AI with baseline request/response context for enhanced evasion
+./obfuskit -attack xss -payload "<script>alert('test')</script>" \
+  -ai -ai-provider openai -ai-model gpt-4 \
+  -ai-context "REQUEST_BASELINE: POST /api/search HTTP/1.1\nHost: example.com\nContent-Type: application/x-www-form-urlencoded\n\nquery=user_input&filter=active\n\nRESPONSE_BASELINE: HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"results\": [{\"id\": 1, \"name\": \"test\"}]}"
+
+# Load AI configuration from file (overrides defaults)
+./obfuskit -attack xss -ai -ai-config examples/configs/ai-openai.json
+```
+
+Environment variables (keys and defaults):
+
+```bash
+# Generic (provider-agnostic)
+export OBFUSKIT_AI_PROVIDER=openai           # openai | anthropic | local | huggingface
+export OBFUSKIT_AI_API_KEY=sk-...            # used when provider requires a key
+export OBFUSKIT_AI_MODEL=gpt-4-turbo-preview
+export OBFUSKIT_AI_ENDPOINT=http://localhost:11434/api/generate  # for local
+
+# Provider-specific keys (also supported)
+export OPENAI_API_KEY=sk-...
+export ANTHROPIC_API_KEY=sk-ant-...
+export HUGGINGFACE_API_KEY=hf_...
+
+# Example
+export OBFUSKIT_AI_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+./obfuskit -attack sqli -ai -ai-count 10
+```
+
+Notes:
+- CLI flags override env vars; env vars override built-in defaults.
+- Local provider does not require an API key; set `OBFUSKIT_AI_ENDPOINT` if not default.
+- See example configs: `examples/configs/ai-openai.json`, `examples/configs/ai-local.json`.
+
+**Burp Plugin Integration:**
+The Burp Suite plugin automatically captures baseline request/response context and sends it to the AI engine for enhanced payload generation. This provides context-aware evasion that understands the target application's behavior.
 
 **Supported WAF Detection:**
 - CloudFlare, AWS WAF, Azure WAF

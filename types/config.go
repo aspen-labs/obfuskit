@@ -142,4 +142,9 @@ type Config struct {
 
 	// Additional attack types for multi-attack processing (CLI only)
 	AdditionalAttackTypes []AttackType `yaml:"-" json:"-"`
+
+	// AI/GenAI configuration (CLI only)
+	EnableAI  bool        `yaml:"-" json:"-"`
+	AIConfig  interface{} `yaml:"-" json:"-"` // Will hold *genai.Config
+	AIContext string      `yaml:"-" json:"-"`
 }

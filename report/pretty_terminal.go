@@ -11,10 +11,17 @@ import (
 
 // PrintTerminalReport prints a formatted report to the terminal
 func PrintTerminalReport(results []request.TestResult) {
-	// Count statistics
-	total := len(results)
+	PrintTerminalReportWithBaseline(results, results)
+}
+
+// PrintTerminalReportWithBaseline prints a report where the summary is computed from
+// the provided baseline slice, while the detailed section is printed from results.
+// This allows filtered views (e.g., only-successful) without altering summary totals.
+func PrintTerminalReportWithBaseline(results []request.TestResult, baseline []request.TestResult) {
+	// Count statistics from baseline
+	total := len(baseline)
 	blocked := 0
-	for _, result := range results {
+	for _, result := range baseline {
 		if result.Blocked {
 			blocked++
 		}
