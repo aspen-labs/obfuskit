@@ -12,7 +12,7 @@ import (
 var DefaultConfigs = map[string]*Config{
 	"openai": {
 		Provider:            "openai",
-		Model:               "gpt-4-turbo-preview",
+		Model:               "gpt-4o-mini",
 		MaxTokens:           1500,
 		Temperature:         0.7,
 		Timeout:             60 * time.Second,
@@ -69,6 +69,11 @@ func LoadConfig(configPath string) (*Config, error) {
 		return config, nil
 	}
 
+	// Check for provider-specific environment variables even without OBFUSKIT_AI_PROVIDER
+	if config := loadConfigFromProviderSpecificEnv(); config != nil {
+		return config, nil
+	}
+
 	// Return default OpenAI config
 	return getDefaultConfig("openai"), nil
 }
@@ -101,7 +106,11 @@ func loadConfigFromFile(path string) (*Config, error) {
 
 // loadConfigFromEnv loads configuration from environment variables
 func loadConfigFromEnv() *Config {
+
 	provider := os.Getenv("OBFUSKIT_AI_PROVIDER")
+
+	// If no provider is set via environment, return nil
+	// (provider will be set via CLI flags later)
 	if provider == "" {
 		return nil
 	}
@@ -138,6 +147,40 @@ func loadConfigFromEnv() *Config {
 	}
 
 	return config
+}
+
+// loadConfigFromProviderSpecificEnv loads configuration from provider-specific environment variables
+// even when OBFUSKIT_AI_PROVIDER is not set
+func loadConfigFromProviderSpecificEnv() *Config {
+	// Check for OpenAI API key
+	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+		config := getDefaultConfig("openai")
+		config.APIKey = apiKey
+		return config
+	}
+
+	// Check for Anthropic API key
+	if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
+		config := getDefaultConfig("anthropic")
+		config.APIKey = apiKey
+		return config
+	}
+
+	// Check for HuggingFace API key
+	if apiKey := os.Getenv("HUGGINGFACE_API_KEY"); apiKey != "" {
+		config := getDefaultConfig("huggingface")
+		config.APIKey = apiKey
+		return config
+	}
+
+	// Check for local endpoint
+	if endpoint := os.Getenv("OBFUSKIT_AI_ENDPOINT"); endpoint != "" {
+		config := getDefaultConfig("local")
+		config.APIEndpoint = endpoint
+		return config
+	}
+
+	return nil
 }
 
 // getDefaultConfig returns a copy of the default configuration for a provider

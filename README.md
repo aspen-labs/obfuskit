@@ -85,6 +85,7 @@ Apply multiple encoding schemes including best-fit/worst-fit representations.
 - **Mixed Case** - Case variation techniques
 - **UTF-8** - UTF-8 byte sequences
 - **Best-Fit Encodings** - Tailored for WAF bypass testing
+- **Smart Deduplication** - Automatic removal of duplicate payloads at multiple levels
 - **Command Obfuscation** - Unix/Windows command hiding techniques
 - **Path Traversal** - Directory traversal encoding variants
 
@@ -414,12 +415,25 @@ When testing against a URL, ObfusKit will automatically test various injection p
 
 ### Custom Payload Files
 
-Create a file with one payload per line:
+Create a file with one payload per line (duplicates are automatically removed):
 ```bash
 echo '<script>alert(1)</script>' > my_payloads.txt
 echo '<img src=x onerror=alert(1)>' >> my_payloads.txt
+echo '<script>alert(1)</script>' >> my_payloads.txt  # This duplicate will be removed
 ./obfuskit -attack xss -payload-file my_payloads.txt -level advanced
 ```
+
+### Smart Deduplication
+
+ObfusKit automatically removes duplicate payloads at multiple levels:
+
+- **Base Payload Deduplication**: Removes duplicates when loading from files
+- **AI-Generated Deduplication**: Removes duplicates from AI-generated payloads
+- **Variant Deduplication**: Removes duplicate variants within each evasion type
+- **Cross-Attack Deduplication**: Removes duplicates across multiple attack types
+- **Final Result Deduplication**: Final cleanup of any remaining duplicates
+
+This ensures clean, unique payload sets for efficient testing.
 
 ### Report Generation
 

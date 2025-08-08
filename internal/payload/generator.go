@@ -37,6 +37,8 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 
 	// Load base payloads for all attack types
 	allBasePayloads := make(map[string][]string)
+	globalSeenPayloads := make(map[string]bool) // Track payloads across all attack types
+
 	for _, attackType := range attackTypesToProcess {
 		basePayloads, err := LoadBasePayloads(attackType)
 		if err != nil {
@@ -44,9 +46,14 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 			continue
 		}
 
-		// Merge payloads from this attack type
+		// Merge payloads from this attack type with deduplication
 		for key, payloads := range basePayloads {
-			allBasePayloads[key] = append(allBasePayloads[key], payloads...)
+			for _, payload := range payloads {
+				if !globalSeenPayloads[payload] {
+					allBasePayloads[key] = append(allBasePayloads[key], payload)
+					globalSeenPayloads[payload] = true
+				}
+			}
 		}
 	}
 
@@ -90,12 +97,21 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 				}
 
 				added := 0
+				seenPayloads := make(map[string]bool)
+
+				// Deduplicate AI-generated payloads
 				for _, gp := range genResult.Payloads {
-					if strings.TrimSpace(gp.Payload) == "" {
+					payload := strings.TrimSpace(gp.Payload)
+					if payload == "" {
 						continue
 					}
-					allBasePayloads[string(attackType)] = append(allBasePayloads[string(attackType)], gp.Payload)
-					added++
+
+					// Check if we've already seen this payload
+					if !seenPayloads[payload] {
+						allBasePayloads[string(attackType)] = append(allBasePayloads[string(attackType)], payload)
+						seenPayloads[payload] = true
+						added++
+					}
 				}
 
 				if added > 0 {
@@ -140,6 +156,9 @@ func HandleGeneratePayloads(results *model.TestResults, level types.EvasionLevel
 	if progress != nil {
 		progress.Finish()
 	}
+
+	// Final deduplication across all results
+	results.PayloadResults = deduplicatePayloadResults(results.PayloadResults)
 
 	// Apply filtering if configured
 	originalCount := len(results.PayloadResults)
@@ -388,17 +407,48 @@ func GenerateVariantsForPayload(results *model.TestResults, payload string, atta
 			fmt.Printf("Warning: Failed to apply %s to payload: %v\n", evasionType, err)
 			continue
 		}
+
+		// Deduplicate variants within this evasion type
 		if len(variants) > 0 {
-			results.PayloadResults = append(results.PayloadResults, model.PayloadResults{
-				OriginalPayload: payload,
-				AttackType:      string(attackType),
-				EvasionType:     string(evasionType),
-				Variants:        variants,
-				Level:           string(level),
-			})
+			seenVariants := make(map[string]bool)
+			deduplicatedVariants := []string{}
+			for _, variant := range variants {
+				if !seenVariants[variant] {
+					deduplicatedVariants = append(deduplicatedVariants, variant)
+					seenVariants[variant] = true
+				}
+			}
+
+			if len(deduplicatedVariants) > 0 {
+				results.PayloadResults = append(results.PayloadResults, model.PayloadResults{
+					OriginalPayload: payload,
+					AttackType:      string(attackType),
+					EvasionType:     string(evasionType),
+					Variants:        deduplicatedVariants,
+					Level:           string(level),
+				})
+			}
 		}
 	}
 	return nil
+}
+
+// deduplicatePayloadResults removes duplicate payload results based on original payload and evasion type
+func deduplicatePayloadResults(results []model.PayloadResults) []model.PayloadResults {
+	seen := make(map[string]bool)
+	var deduplicated []model.PayloadResults
+
+	for _, result := range results {
+		// Create a unique key based on original payload and evasion type
+		key := result.OriginalPayload + "|" + result.EvasionType
+
+		if !seen[key] {
+			deduplicated = append(deduplicated, result)
+			seen[key] = true
+		}
+	}
+
+	return deduplicated
 }
 
 func FilterEvasionEncodings(evasions []types.PayloadEncoding, config interface{}) []types.PayloadEncoding {
@@ -481,7 +531,17 @@ func LoadBasePayloads(attackType types.AttackType) (map[string][]string, error) 
 			fmt.Printf("Warning: Could not load payloads for %s: %v\n", aType, err)
 			continue
 		}
-		payloads[string(aType)] = filePayloads
+
+		// Deduplicate file payloads
+		seenPayloads := make(map[string]bool)
+		deduplicatedPayloads := []string{}
+		for _, payload := range filePayloads {
+			if !seenPayloads[payload] {
+				deduplicatedPayloads = append(deduplicatedPayloads, payload)
+				seenPayloads[payload] = true
+			}
+		}
+		payloads[string(aType)] = deduplicatedPayloads
 	}
 	if len(payloads) == 0 {
 		return nil, fmt.Errorf("no payloads could be loaded for attack type: %s", attackType)
