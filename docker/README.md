@@ -21,7 +21,7 @@ docker run --rm -v $(pwd)/output:/app/output obfuskit:latest \
 ### Using Docker Compose
 
 ```bash
-# Start the full stack
+# Start the full stack with WAF testing environment
 docker-compose up -d
 
 # Check status
@@ -38,11 +38,10 @@ docker-compose down
 
 ### Core Files
 - **`Dockerfile`** - Multi-stage Docker build configuration
-- **`docker-compose.yml`** - Complete stack with ObfusKit, Redis, and Nginx
+- **`docker-compose.yml`** - Complete stack with ObfusKit, Echo Server, and Coraza WAF
 - **`.dockerignore`** - Files to exclude from Docker build context
 
 ### Configuration
-- **`nginx.conf`** - Nginx reverse proxy configuration with SSL
 - **`build.sh`** - Comprehensive build and management script
 
 ## 🚀 Deployment Options
@@ -91,11 +90,33 @@ docker run -d \
 
 ### 3. Docker Compose Stack
 
-The `docker-compose.yml` provides a complete stack with:
+The `docker-compose.yml` provides a complete WAF testing environment with:
 
-- **ObfusKit Application** - Main testing engine
-- **Redis** - Caching layer for improved performance
-- **Nginx** - Reverse proxy with SSL termination and load balancing
+- **Echo Server** - Target application for testing (port 7080)
+- **Coraza Caddy** - WAF/Reverse proxy with Coraza rules (port 8000)
+- **ObfusKit** - Main testing engine (port 8181)
+
+**WAF Testing Setup:**
+
+The updated docker-compose.yml provides a complete WAF testing environment:
+
+1. **Echo Server** (port 7080): Simple HTTP server that echoes back requests
+2. **Coraza Caddy** (port 8000): WAF with Coraza rules for testing evasion techniques
+3. **ObfusKit** (port 8181): Main testing engine with API endpoint
+
+**Testing Flow:**
+```bash
+# Start the environment
+docker-compose up -d
+
+# Test against the WAF-protected echo server
+curl -X POST http://localhost:8888/echo \
+  -H "Content-Type: application/json" \
+  -d '{"test": "<script>alert(1)</script>"}'
+
+# Use ObfusKit to test evasion techniques
+./obfuskit -attack xss -payload "<script>alert(1)</script>" -url http://localhost:8888/echo
+```
 
 **Configuration:**
 ```yaml
@@ -229,8 +250,8 @@ docker-compose logs -f
 
 # View specific service logs
 docker-compose logs -f obfuskit
-docker-compose logs -f nginx
-docker-compose logs -f redis
+docker-compose logs -f corazacaddy
+docker-compose logs -f echoserver
 ```
 
 ### Health Checks
@@ -262,7 +283,7 @@ docker inspect obfuskit-app
 ### Network Security
 - Internal network isolation
 - SSL/TLS encryption
-- Rate limiting via Nginx
+- Rate limiting via Coraza WAF
 - Security headers configured
 
 ### Data Security
@@ -330,19 +351,13 @@ deploy:
       cpus: '1.0'
 ```
 
-### Caching Optimization
+### WAF Optimization
 ```yaml
-# Redis configuration
-redis:
-  command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
-```
-
-### Nginx Optimization
-```nginx
-# In nginx.conf
-worker_processes auto;
-worker_connections 2048;
-keepalive_timeout 65;
+# Coraza WAF configuration
+corazacaddy:
+  environment:
+    - CORAZA_WORKERS=4
+    - CORAZA_MEMORY_LIMIT=512M
 ```
 
 ## 🔄 CI/CD Integration

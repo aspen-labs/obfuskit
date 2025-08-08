@@ -2,7 +2,7 @@
 # Multi-stage build for optimized production image
 
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23.4-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -52,21 +52,22 @@ RUN mkdir -p /app/output && \
 USER obfuskit
 
 # Expose default port for server mode
-EXPOSE 8080
+EXPOSE 8181
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD ./obfuskit -version || exit 1
 
-# Default command shows help
-CMD ["./obfuskit", "-help"]
-
 # Labels for metadata
-LABEL maintainer="ObfusKit Team" \
+LABEL maintainer="Aspen Labs ObfusKit Team" \
       description="Enterprise WAF Testing Platform" \
-      version="2.1.0" \
+      version="2.2.0" \
       org.opencontainers.image.title="ObfusKit" \
       org.opencontainers.image.description="Advanced WAF evasion testing tool" \
-      org.opencontainers.image.version="2.1.0" \
+      org.opencontainers.image.version="2.2.0" \
       org.opencontainers.image.vendor="ObfusKit" \
       org.opencontainers.image.licenses="MIT"
+
+
+# Default command starts server mode
+CMD ["./obfuskit", "-server"]

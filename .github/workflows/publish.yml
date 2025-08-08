@@ -1,0 +1,223 @@
+name: Publish Docker Images
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push obfuskit Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract corazawaf metadata
+        id: coraza-waf-meta
+        uses: docker/metadata-action@v5
+        with:
+            images: ${{ env.REGISTRY }}/coraza-waf-testing
+            tags: |
+                type=ref,event=branch
+                type=ref,event=pr
+                type=semver,pattern={{version}}
+                type=semver,pattern={{major}}.{{minor}}
+                type=semver,pattern={{major}}
+                type=raw,value=latest,enable={{is_default_branch}}
+                type=sha,prefix={{branch}}-
+
+    
+      - name: Build and push coraza-waf-testing Docker image
+        uses: docker/build-push-action@v5
+        with:
+            context: ./waf-testing/coraza-waf
+            platforms: linux/amd64,linux/arm64
+            push: ${{ github.event_name != 'pull_request' }}
+            tags: ${{ steps.coraza-waf-meta.outputs.tags }}
+            labels: ${{ steps.coraza-waf-meta.outputs.labels }}
+            cache-from: type=gha
+            cache-to: type=gha,mode=max
+
+  # Additional job for testing the built images
+  test-images:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test Docker image
+        run: |
+          # Pull the latest image for the current platform
+          docker pull --platform ${{ matrix.platform }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          # Test basic functionality
+          docker run --rm --platform ${{ matrix.platform }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ./obfuskit -version
+          
+          # Test help command
+          docker run --rm --platform ${{ matrix.platform }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ./obfuskit -help | head -5
+          
+          # Test payload generation
+          docker run --rm --platform ${{ matrix.platform }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ./obfuskit -attack xss -payload '<script>alert(1)</script>' -limit 3
+
+  # Job to publish release notes
+  release-notes:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: release_notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const latestRelease = releases.find(release => 
+              release.tag_name === context.ref.replace('refs/tags/', '')
+            );
+            
+            if (latestRelease) {
+              core.setOutput('body', latestRelease.body || '');
+            } else {
+              core.setOutput('body', 'Release notes not found');
+            }
+
+      - name: Update release with Docker images
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const imageName = `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}`;
+            
+            const dockerImages = `
+            ## 🐳 Docker Images
+            
+            Multi-architecture Docker images are available:
+            
+            ### Pull Command
+            \`\`\`bash
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${tag}
+            \`\`\`
+            
+            ### Architecture Support
+            - **AMD64**: \`linux/amd64\`
+            - **ARM64**: \`linux/arm64\`
+            
+            ### Quick Start
+            \`\`\`bash
+            # Run with default settings
+            docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${tag} \\
+              ./obfuskit -attack xss -payload '<script>alert(1)</script>'
+            
+            # Run with volume mounting
+            docker run --rm \\
+              -v \$(pwd)/output:/app/output \\
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${tag} \\
+              ./obfuskit -attack xss -payload '<script>alert(1)</script>' \\
+              -output /app/output/results.json
+            \`\`\`
+            
+            ### WAF Testing Environment
+            \`\`\`bash
+            # Clone and run with docker-compose
+            git clone https://github.com/${{ github.repository }}.git
+            cd obfuskit
+            docker-compose up -d
+            
+            # Test against WAF
+            ./obfuskit -attack xss -payload '<script>alert(1)</script>' \\
+              -url http://localhost:8888/echo
+            \`\`\`
+            `;
+            
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const release = releases.find(r => r.tag_name === tag);
+            if (release) {
+              const updatedBody = release.body + dockerImages;
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+                body: updatedBody,
+              });
+            }

@@ -6,7 +6,7 @@ services:
   echoserver:
     image: piyushroshan/echo-server:arm64
     ports:
-      - "7000:8080"
+      - "7080:8080"
   
   corazacaddy:
     image: piyushroshan/coraza-caddy:arm64
@@ -15,4 +15,4 @@ services:
     volumes:
       - ./logs:/app/logs
     ports:
-      - "8000:8000"
+      - "8888:8000"

@@ -1,127 +1,28 @@
 version: '3.8'
 
 services:
+  echoserver:
+    image: piyushroshan/echo-server:arm64
+    ports:
+      - "7080:8080"
+  
+  corazacaddy:
+    image: piyushroshan/coraza-caddy:arm64
+    depends_on:
+      - echoserver
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "8888:8000"
+
   obfuskit:
-    build: .
-    image: obfuskit:latest
-    container_name: obfuskit-app
-    restart: unless-stopped
-    
-    # Environment variables
+    image: piyushroshan/obfuskit:arm64
+    depends_on:
+      - corazacaddy
     environment:
       - OBFUSKIT_MODE=server
-      - OBFUSKIT_PORT=8888
-      - OBFUSKIT_HOST=0.0.0.0
-    
-    # Port mapping
-    ports:
-      - "8888:8888"
-    
-    # Volume mounts for persistent data
     volumes:
+      - ./logs:/app/logs
       - ./output:/app/output:rw
-      - ./custom-payloads:/app/custom-payloads:ro
-      - ./custom-configs:/app/custom-configs:ro
-    
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
-    
-    # Health check
-    healthcheck:
-      test: ["CMD", "./obfuskit", "-version"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    
-    # Network configuration
-    networks:
-      - obfuskit-network
-    
-    # Command override for server mode
-    command: ["./obfuskit", "-server", "-config", "/app/custom-configs/server.yaml"]
-
-  # Redis for caching (optional)
-  redis:
-    image: redis:7-alpine
-    container_name: obfuskit-redis
-    restart: unless-stopped
-    
-    # Redis configuration
-    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
-    
-    # Volume for persistence
-    volumes:
-      - redis-data:/data
-    
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.2'
-    
-    # Health check
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    
-    networks:
-      - obfuskit-network
-
-  # Nginx reverse proxy (optional)
-  nginx:
-    image: nginx:alpine
-    container_name: obfuskit-nginx
-    restart: unless-stopped
-    
-    # Port mapping
     ports:
-      - "8888:8888"
-    
-    # Volume mounts
-    volumes:
-      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/ssl:/etc/ssl/certs:ro
-    
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-          cpus: '0.1'
-    
-    # Health check
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    
-    networks:
-      - obfuskit-network
-    
-    depends_on:
-      - obfuskit
-
-# Networks
-networks:
-  obfuskit-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-
-# Volumes
-volumes:
-  redis-data:
-    driver: local
+      - "8181:8181"
