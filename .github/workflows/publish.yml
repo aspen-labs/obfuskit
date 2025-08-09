@@ -71,13 +71,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch,suffix=${{matrix.suffix}}
-            type=ref,event=pr,suffix=${{matrix.suffix}}
-            type=semver,pattern={{version}},suffix=${{matrix.suffix}}
-            type=semver,pattern={{major}}.{{minor}},suffix=${{matrix.suffix}}
-            type=semver,pattern={{major}},suffix=${{matrix.suffix}}
-            type=raw,value=latest,suffix=${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}},suffix=${{matrix.suffix}}
+            type=ref,event=branch,suffix=-${{matrix.suffix}}
+            type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
+            type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
+            type=sha,prefix={{branch}},suffix=-${{matrix.suffix}}
       - name: Build ${{ matrix.platform }} (main image)
         uses: docker/build-push-action@v5
         with:
@@ -100,13 +100,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/obfuskit-coraza-waf
           tags: |
-            type=ref,event=branch,suffix=${{matrix.suffix}}
-            type=ref,event=pr,suffix=${{matrix.suffix}}
-            type=semver,pattern={{version}},suffix=${{matrix.suffix}}
-            type=semver,pattern={{major}}.{{minor}},suffix=${{matrix.suffix}}
-            type=semver,pattern={{major}},suffix=${{matrix.suffix}}
-            type=raw,value=latest,suffix=${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}},suffix=${{matrix.suffix}}
+            type=ref,event=branch,suffix=-${{matrix.suffix}}
+            type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
+            type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
+            type=sha,prefix={{branch}},suffix=-${{matrix.suffix}}
       - name: Build ${{ matrix.platform }} (coraza-waf)
         uses: docker/build-push-action@v5
         with:
