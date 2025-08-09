@@ -75,7 +75,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}},suffix=-${{matrix.suffix}}
+            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
       - name: Build ${{ matrix.platform }} (main image)
         uses: docker/build-push-action@v5
         with:
@@ -87,7 +87,7 @@ jobs:
             VERSION_BUILD_DATE=${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}-${{ matrix.suffix }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -104,7 +104,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}},suffix=-${{matrix.suffix}}
+            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
       - name: Build ${{ matrix.platform }} (coraza-waf)
         uses: docker/build-push-action@v5
         with:
