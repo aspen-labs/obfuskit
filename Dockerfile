@@ -19,8 +19,16 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o obfuskit .
+# Build the application (version info is provided via ldflags by CI)
+ARG VERSION_GIT_TAG
+ARG VERSION_GIT_SHA
+ARG VERSION_BUILD_DATE
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+    -ldflags "-s -w \
+      -X obfuskit/internal/version.Version=${VERSION_GIT_TAG} \
+      -X obfuskit/internal/version.GitCommit=${VERSION_GIT_SHA} \
+      -X obfuskit/internal/version.BuildDate=${VERSION_BUILD_DATE}" \
+    -o obfuskit .
 
 # Production stage
 FROM alpine:latest
@@ -59,12 +67,14 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD ./obfuskit -version || exit 1
 
 # Labels for metadata
+ARG VERSION_GIT_TAG
+ARG VERSION_GIT_SHA
 LABEL maintainer="Aspen Labs ObfusKit Team" \
       description="Enterprise WAF Testing Platform" \
-      version="2.2.0" \
       org.opencontainers.image.title="ObfusKit" \
       org.opencontainers.image.description="Advanced WAF evasion testing tool" \
-      org.opencontainers.image.version="2.2.0" \
+      org.opencontainers.image.version="${VERSION_GIT_TAG}" \
+      org.opencontainers.image.revision="${VERSION_GIT_SHA}" \
       org.opencontainers.image.vendor="ObfusKit" \
       org.opencontainers.image.licenses="MIT"
 

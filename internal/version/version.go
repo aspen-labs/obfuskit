@@ -5,10 +5,15 @@ import (
 	"runtime"
 )
 
-const (
-	Version   = "2.1.0"
-	BuildDate = "2024-01-20"
-	GitCommit = "enterprise"
+// These variables are meant to be overridden at build time via -ldflags, e.g.:
+//
+//	-X obfuskit/internal/version.Version=v1.2.3 \
+//	-X obfuskit/internal/version.BuildDate=2025-08-09T00:00:00Z \
+//	-X obfuskit/internal/version.GitCommit=abcdef1
+var (
+	Version   = "dev"
+	BuildDate = "unknown"
+	GitCommit = "unknown"
 )
 
 // BuildInfo contains version and build information

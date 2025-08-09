@@ -54,9 +54,13 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.platform }}
+          build-args: |
+            VERSION_GIT_TAG=${{ github.ref_name }}
+            VERSION_GIT_SHA=${{ github.sha }}
+            VERSION_BUILD_DATE=${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}-${{ matrix.suffix }}
-          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Metadata (coraza-waf)
@@ -120,8 +124,10 @@ jobs:
       - name: Metadata (coraza-waf)
         id: coraza_meta
         uses: docker/metadata-action@v5
+
+        # Since publishing another image, we need to use the full path
         with:
-          images: ${{ env.REGISTRY }}/obfuskit-coraza-waf
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/obfuskit-coraza-waf
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -166,7 +172,14 @@ jobs:
         run: |
           mkdir -p dist
           BIN_NAME=obfuskit-${GOOS}-${GOARCH}
-          go build -trimpath -ldflags "-s -w" -o "dist/${BIN_NAME}" ./
+          VERSION_GIT_TAG=${GITHUB_REF_NAME}
+          VERSION_GIT_SHA=${GITHUB_SHA}
+          VERSION_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          go build -trimpath -ldflags "-s -w \
+            -X obfuskit/internal/version.Version=${VERSION_GIT_TAG} \
+            -X obfuskit/internal/version.GitCommit=${VERSION_GIT_SHA} \
+            -X obfuskit/internal/version.BuildDate=${VERSION_BUILD_DATE}" \
+            -o "dist/${BIN_NAME}" ./
           tar -C dist -czf "dist/${BIN_NAME}.tar.gz" "${BIN_NAME}"
           sha256sum "dist/${BIN_NAME}.tar.gz" > "dist/${BIN_NAME}.tar.gz.sha256"
       - name: Upload artifact
