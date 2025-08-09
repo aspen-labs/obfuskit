@@ -153,15 +153,18 @@ jobs:
 
   build-binaries:
     name: Build Go binaries (${{ matrix.goos }}/${{ matrix.goarch }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(matrix.runner) }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - goos: linux
             goarch: amd64
+            runner: 'ubuntu-24.04'
+
           - goos: linux
             goarch: arm64
+            runner: 'ubuntu-24.04-arm'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go
