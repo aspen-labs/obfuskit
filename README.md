@@ -522,7 +522,7 @@ docker run obfuskit:latest -attack xss -payload '<script>alert(1)</script>'
 
 ## 🗺️ Roadmap
 
-### ✅ Recently Completed (v2.0)
+### ✅ Recently Completed (v1.0)
 - **✅ Parallel Processing** - Multi-threaded testing with configurable worker count
 - **✅ Batch URL Processing** - File-based URL testing for large-scale assessments
 - **✅ JSON Output Format** - Machine-readable output for automation and CI/CD
@@ -531,15 +531,12 @@ docker run obfuskit:latest -attack xss -payload '<script>alert(1)</script>'
 - **✅ Multiple Attack Types** - Combined attack testing (e.g., `-attack xss,sqli,unixcmdi`)
 - **✅ Advanced Filtering** - Filter by complexity, limit payloads, exclude encodings, response criteria
 
-### ✅ Recently Completed (v2.1)
+### ✅ Recently Completed (v1.1)
 - **✅ WAF Fingerprinting** - Automatic WAF detection with adaptive evasion strategies
 
-### 🎯 Planned Features (v3.0)
+### 🎯 Planned Features (v1.2)
 - **📈 Rate Limiting** - Intelligent request throttling and retry mechanisms
 - **🔍 Response Analysis** - Advanced pattern recognition for bypass detection
-- **🐳 Container Support** - Docker images and Kubernetes deployment
-- **📱 Web Dashboard** - Real-time monitoring and result visualization
-- **🤖 AI-Powered Evasions** - Machine learning-based payload generation
 
 ## Contributing
 
