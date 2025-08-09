@@ -116,6 +116,29 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Metadata (vuln-app)
+        id: vuln_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/obfuskit-vuln-app
+          tags: |
+            type=ref,event=branch,suffix=-${{matrix.suffix}}
+            type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
+            type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
+      - name: Build ${{ matrix.platform }} (vuln-app)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./waf-testing/obfuskit-vuln-app
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.vuln_meta.outputs.tags }}
+          labels: ${{ steps.vuln_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
   manifest:
     name: Create and push multi-arch manifests
     needs: [build-arch]
@@ -187,6 +210,36 @@ jobs:
               "$tag-arm64"
           done <<< "${{ steps.coraza_meta.outputs.tags }}"
 
+      - name: Metadata (vuln-app)
+        id: vuln_meta
+        uses: docker/metadata-action@v5
+
+        # Since publishing another image, we need to use the full path
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/obfuskit-vuln-app
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}-
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+      - name: Create manifest (vuln-app)
+        run: |
+          set -euo pipefail
+          retry() { n=0; until [ "$n" -ge 10 ]; do "$@" && break; n=$((n+1)); sleep 6; done; }
+          check_exists() { docker buildx imagetools inspect "$1" >/dev/null 2>&1; }
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            echo "Preparing vuln-app manifest for: $tag"
+            retry check_exists "$tag-amd64"
+            retry check_exists "$tag-arm64"
+            docker buildx imagetools create \
+              -t "$tag" \
+              "$tag-amd64" \
+              "$tag-arm64"
+          done <<< "${{ steps.vuln_meta.outputs.tags }}"
   build-binaries:
     name: Build Go binaries (${{ matrix.goos }}/${{ matrix.goarch }})
     runs-on: ${{ matrix.runner }}
