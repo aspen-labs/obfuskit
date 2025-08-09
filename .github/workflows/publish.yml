@@ -4,37 +4,39 @@ on:
   push:
     branches: [ main ]
     tags: [ 'v*' ]
-  pull_request:
-    branches: [ main ]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+  build-arch:
+    name: Build ${{ matrix.platform }} images
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            suffix: amd64
+            runner: '"ubuntu-latest"'
+          - platform: linux/arm64
+            suffix: arm64
+            runner: '["self-hosted","Linux","ARM64"]'
+    runs-on: ${{ fromJSON(matrix.runner) }}
     permissions:
       contents: read
       packages: write
       id-token: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        if: github.event_name != 'pull_request'
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
+      - name: Metadata (main image)
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -47,49 +49,157 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix={{branch}}-
-
-      - name: Build and push obfuskit Docker image
+      - name: Build ${{ matrix.platform }} (main image)
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-${{ matrix.suffix }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Extract corazawaf metadata
-        id: coraza-waf-meta
+      - name: Metadata (coraza-waf)
+        id: coraza_meta
         uses: docker/metadata-action@v5
         with:
-            images: ${{ env.REGISTRY }}/obfuskit-coraza-waf
-            tags: |
-                type=ref,event=branch
-                type=ref,event=pr
-                type=semver,pattern={{version}}
-                type=semver,pattern={{major}}.{{minor}}
-                type=semver,pattern={{major}}
-                type=raw,value=latest,enable={{is_default_branch}}
-                type=sha,prefix={{branch}}-
-
-    
-      - name: Build and push coraza-waf-testing Docker image
+          images: ${{ env.REGISTRY }}/obfuskit-coraza-waf
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+      - name: Build ${{ matrix.platform }} (coraza-waf)
         uses: docker/build-push-action@v5
         with:
-            context: ./waf-testing/coraza-waf
-            platforms: linux/amd64,linux/arm64
-            push: ${{ github.event_name != 'pull_request' }}
-            tags: ${{ steps.coraza-waf-meta.outputs.tags }}
-            labels: ${{ steps.coraza-waf-meta.outputs.labels }}
-            cache-from: type=gha
-            cache-to: type=gha,mode=max
+          context: ./waf-testing/coraza-waf
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.coraza_meta.outputs.tags }}-${{ matrix.suffix }}
+          labels: ${{ steps.coraza_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  manifest:
+    name: Create and push multi-arch manifests
+    needs: [build-arch]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Metadata (main image)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+      - name: Create manifest (main image)
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            docker buildx imagetools create \
+              -t "$tag" \
+              "$tag-arm64" \
+              "$tag-amd64"
+          done <<< "${{ steps.meta.outputs.tags }}"
+      - name: Metadata (coraza-waf)
+        id: coraza_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/obfuskit-coraza-waf
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+      - name: Create manifest (coraza-waf)
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            docker buildx imagetools create \
+              -t "$tag" \
+              "$tag-arm64" \
+              "$tag-amd64"
+          done <<< "${{ steps.coraza_meta.outputs.tags }}"
+
+  build-binaries:
+    name: Build Go binaries (${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist
+          BIN_NAME=obfuskit-${GOOS}-${GOARCH}
+          go build -trimpath -ldflags "-s -w" -o "dist/${BIN_NAME}" ./
+          tar -C dist -czf "dist/${BIN_NAME}.tar.gz" "${BIN_NAME}"
+          sha256sum "dist/${BIN_NAME}.tar.gz" > "dist/${BIN_NAME}.tar.gz.sha256"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            dist/obfuskit-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+            dist/obfuskit-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz.sha256
+
+  release-binaries:
+    name: Upload binaries to Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-binaries]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: binaries-*
+          merge-multiple: true
+      - name: Publish Release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/obfuskit-*.tar.gz
+            dist/obfuskit-*.tar.gz.sha256
 
   # Additional job for testing the built images
   test-images:
-    needs: build-and-push
+    needs: manifest
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
 
     strategy:
       matrix:
@@ -128,7 +238,7 @@ jobs:
 
   # Job to publish release notes
   release-notes:
-    needs: build-and-push
+    needs: [manifest, release-binaries]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
 
@@ -205,6 +315,26 @@ jobs:
               -url http://localhost:8888/echo
             \`\`\`
             `;
+
+            const binaries = `
+            ## 📦 Binaries
+            Prebuilt CLI binaries are attached to this release:
+            - Linux AMD64: \
+              \
+              obfuskit-linux-amd64.tar.gz (with .sha256)
+            - Linux ARM64: \
+              \
+              obfuskit-linux-arm64.tar.gz (with .sha256)
+
+            Download and verify:
+            \`\`\`bash
+            curl -LO ${imageName}/releases/download/${tag}/obfuskit-linux-amd64.tar.gz
+            curl -LO ${imageName}/releases/download/${tag}/obfuskit-linux-amd64.tar.gz.sha256
+            sha256sum -c obfuskit-linux-amd64.tar.gz.sha256
+            tar -xzf obfuskit-linux-amd64.tar.gz
+            ./obfuskit-linux-amd64 -version
+            \`\`\`
+            `;
             
             const { data: releases } = await github.rest.repos.listReleases({
               owner: context.repo.owner,
@@ -213,7 +343,7 @@ jobs:
             
             const release = releases.find(r => r.tag_name === tag);
             if (release) {
-              const updatedBody = release.body + dockerImages;
+              const updatedBody = (release.body || '') + "\n\n" + dockerImages + "\n\n" + binaries;
               await github.rest.repos.updateRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,

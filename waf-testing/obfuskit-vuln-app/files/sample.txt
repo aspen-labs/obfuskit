@@ -1,0 +1,2 @@
+This is a harmless sample file inside obfuskit-vuln-app/files.
+

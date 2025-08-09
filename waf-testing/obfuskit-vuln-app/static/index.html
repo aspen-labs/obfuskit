@@ -1,0 +1,506 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ObfuskitVulnApp UI (Intentionally Unsafe)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 0; background: #0b1020; color: #e7ecff; }
+    header { padding: 16px 24px; background: #121a33; position: sticky; top: 0; z-index: 5; box-shadow: 0 2px 0 #1a2546 inset; }
+    h1 { font-size: 18px; margin: 0; letter-spacing: 0.5px; }
+    main { display: grid; grid-template-columns: 360px 1fr; gap: 16px; padding: 16px; min-height: calc(100vh - 60px); }
+    .panel { background: #121a33; border: 1px solid #1a2546; border-radius: 10px; padding: 16px; }
+    label { display: block; font-size: 12px; opacity: 0.9; margin: 10px 0 6px; }
+    input, textarea, select { width: 100%; box-sizing: border-box; background: #0b1020; color: #e7ecff; border: 1px solid #1a2546; border-radius: 8px; padding: 10px 12px; outline: none; }
+    textarea { min-height: 110px; resize: vertical; }
+    button { background: #4258ff; border: none; color: white; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    button:hover { filter: brightness(1.05); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tab { background: #0b1020; border: 1px solid #1a2546; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+    .tab.active { background: #243266; border-color: #4258ff; }
+    .result { background: #0b1020; border: 1px dashed #243266; padding: 12px; border-radius: 8px; min-height: 120px; overflow: auto; }
+    .danger { color: #ff8d8d }
+    .hint { font-size: 12px; opacity: 0.7 }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ObfuskitVulnApp UI — intentionally unsafe</h1>
+  </header>
+  <main>
+    <section class="panel">
+      <div class="tabs">
+        <div class="tab active" data-tab="xss">XSS</div>
+        <div class="tab" data-tab="encode">Encodings</div>
+        <div class="tab" data-tab="path">Paths</div>
+        <div class="tab" data-tab="headers">Headers</div>
+        <div class="tab" data-tab="proxy">Proxy</div>
+        <div class="tab" data-tab="scenarios">All Scenarios</div>
+      </div>
+
+      <div id="tab-xss">
+        <label>Payload (rendered as HTML)</label>
+        <textarea id="xss-input"><scr&#x69;pt>prompt('XSS on ' + document.domain)</scr&#x69;pt></textarea>
+        <div class="row">
+          <div>
+            <label class="hint">Endpoint</label>
+            <select id="xss-endpoint">
+              <option value="/xss">/xss</option>
+              <option value="/echo?mode=raw">/echo?mode=raw</option>
+              <option value="/filter">/filter (loose regex + auto decode)</option>
+            </select>
+          </div>
+          <div>
+            <label class="hint">Pre-decode chain (comma separated: url,b64,hex,html,octal,unicode)</label>
+            <input id="xss-decodes" placeholder="url,url" value="html" />
+          </div>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+          <button id="xss-run">Send</button>
+          <span class="hint">Reflected below. This is intentionally unsafe.</span>
+        </div>
+      </div>
+
+      <div id="tab-encode" style="display:none;">
+        <label>Value</label>
+        <textarea id="enc-value"><img src=x onerror=alert(1)></textarea>
+        <div class="row">
+          <div>
+            <label>Mode</label>
+            <select id="enc-mode">
+              <option>url</option>
+              <option>b64</option>
+              <option>hex</option>
+              <option>html</option>
+              <option>octal</option>
+              <option>unicode</option>
+            </select>
+          </div>
+          <div>
+            <label>Repeat</label>
+            <input id="enc-repeat" value="1" />
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <button id="enc-run">Decode via /decode</button>
+        </div>
+      </div>
+
+      <div id="tab-path" style="display:none;">
+        <label>File path</label>
+        <input id="path-file" value="sample.txt"/>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button id="path-run">GET /path</button>
+          <button id="pathwin-run">GET /pathwin</button>
+        </div>
+      </div>
+
+      <div id="tab-headers" style="display:none;">
+        <label>Custom header (key: value)</label>
+        <input id="hdr-kv" value="X-Test: one"/>
+        <label>Duplicate header</label>
+        <input id="hdr-kv2" value="X-Test: two"/>
+        <div style="margin-top:10px;">
+          <button id="hdr-run">GET /headers?pick=last&key=X-Test</button>
+        </div>
+      </div>
+
+      <div id="tab-proxy" style="display:none;">
+        <label>Client IP (X-Forwarded-For)</label>
+        <input id="xff" value="127.0.0.1, 1.2.3.4"/>
+        <div style="margin-top:10px;">
+          <button id="proxy-run">GET /proxy</button>
+        </div>
+      </div>
+
+      <div id="tab-scenarios" style="display:none; max-height: 70vh; overflow: auto;">
+        <div class="scenario">
+          <h3>Case Sensitivity Confusion</h3>
+          <p class="hint">Different casings of the same key are treated differently at first, then collapsed during processing.</p>
+          <div class="row"><input id="sc-case-upper" placeholder="Param" value="AAA"/><input id="sc-case-lower" placeholder="param" value="bbb"/></div>
+          <input id="sc-case-mixed" placeholder="pArAm" value="ccc"/>
+          <div style="margin-top:8px;"><button id="sc-case-run">Try /case</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Encoding mismatch (frontend vs backend)</h3>
+          <p class="hint">Client sends one encoding, backend decodes differently. Use pre-decode chain to simulate.</p>
+          <input id="sc-enc-value" value="%253Cscript%253Ealert(1)%253C%2Fscript%253E"/>
+          <div class="row"><input id="sc-enc-chain" value="url,url"/><select id="sc-enc-ep"><option value="/echo?mode=raw">/echo?mode=raw</option><option value="/xss">/xss</option></select></div>
+          <div style="margin-top:8px;"><button id="sc-enc-run">Try</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Unicode and Hex Encoding</h3>
+          <p class="hint">Decode sequences like \u003c, \x3c and observe output.</p>
+          <input id="sc-unicode-value" value="\u003cimg src=x onerror=alert(1)\u003e"/>
+          <div style="margin-top:8px;"><button id="sc-unicode-run">Decode via /decode?mode=unicode</button></div>
+          <input id="sc-hex-value" style="margin-top:8px;" value="3c696d67207372633d78206f6e6572726f723d616c6572742831293e"/>
+          <div style="margin-top:8px;"><button id="sc-hex-run">Decode via /decode?mode=hex</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Base64 / URL / HTML / Octal / Whitespace Encoding</h3>
+          <p class="hint">Decode common encodings and see how normalization changes behavior.</p>
+          <div class="row"><select id="sc-dec-mode"><option>url</option><option>b64</option><option>hex</option><option>html</option><option>octal</option><option>unicode</option><option value="ws">ws</option></select><input id="sc-dec-repeat" value="1"/></div>
+          <textarea id="sc-dec-value">PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==</textarea>
+          <div style="margin-top:8px;"><button id="sc-dec-run">Decode via /decode</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Mixed / Conflicting Encodings (Chained)</h3>
+          <p class="hint">Apply chained decodes. Example: url,b64,hex over a nested payload.</p>
+          <div class="row"><input id="sc-chain-value" value="dGVzdA%3D%3D"/><input id="sc-chain-steps" value="url,b64"/></div>
+          <div style="margin-top:8px;"><button id="sc-chain-run">Try /chain</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Inconsistent URL Normalization</h3>
+          <p class="hint">Observe how cleaning before/after decoding changes path handling.</p>
+          <input id="sc-norm-u" value="..%2Ffiles%2Fsample.txt"/>
+          <div style="margin-top:8px;"><button id="sc-norm-run">Try /normalize</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Path Normalization Discrepancies</h3>
+          <p class="hint">UNIX vs Windows separators and double decode bugs.</p>
+          <div class="row"><input id="sc-path-file" value="sample.txt"/><input id="sc-pathwin-file" value="..\\..\\README.md"/></div>
+          <div style="margin-top:8px; display:flex; gap:8px;"><button id="sc-path-run">/path</button><button id="sc-pathwin-run">/pathwin</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Misparsed JSON / XML Structures</h3>
+          <p class="hint">Backend falls back to permissive parsing when Content-Type is not JSON; naive XML entity expansion.</p>
+          <textarea id="sc-json-body">a=1&b=2&a=3</textarea>
+          <div style="margin-top:8px; display:flex; gap:8px;"><button id="sc-json-run">POST /json?a=9 (text/plain)</button><button id="sc-xml-run">POST /xml (entity expansion)</button></div>
+          <textarea id="sc-xml-body" style="margin-top:8px;"><!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/hosts">]><x>&e;</x></textarea>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Mime Sniffing</h3>
+          <p class="hint">Sniffed content type overrides declared; HTML gets rendered.</p>
+          <textarea id="sc-mime-body"><html><body><h1>Hi</h1></body></html></textarea>
+          <div style="margin-top:8px;"><button id="sc-mime-run">POST /mime (octet-stream)</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Loose Regex / Auto-Decoding</h3>
+          <p class="hint">Block literal &lt;script but allow double-decoded variants.</p>
+          <input id="sc-filter-q" value="%253Cscript%253Ealert(1)%253C%2Fscript%253E"/>
+          <div style="margin-top:8px;"><button id="sc-filter-run">GET /filter</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Header Parsing Ambiguities</h3>
+          <p class="hint">First vs last value for duplicate headers.</p>
+          <div class="row"><input id="sc-h1" value="X-Test: one"/><input id="sc-h2" value="X-Test: two"/></div>
+          <div style="margin-top:8px;"><button id="sc-headers-run">GET /headers?pick=last&key=X-Test</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Null Byte & Special Char Injection</h3>
+          <p class="hint">Logging vs processing mismatch around null bytes.</p>
+          <input id="sc-null-name" value="admin%00root"/>
+          <div style="margin-top:8px;"><button id="sc-null-run">GET /nullbyte</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>HTTP Parameter Pollution</h3>
+          <p class="hint">Multiple instances of the same parameter; backends may pick first or last.</p>
+          <input id="sc-hpp-values" value="1,2,3"/>
+          <div style="margin-top:8px;"><button id="sc-hpp-run">GET /hpp?a=1&a=2&a=3</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Semicolon Query Parsing</h3>
+          <p class="hint">Treats semicolons as query separators in addition to ampersands.</p>
+          <input id="sc-semi-raw" value="a=1;b=2&also=c"/>
+          <div style="margin-top:8px;"><button id="sc-semi-run">GET /semicolon?raw=...</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Unusual HTTP Methods</h3>
+          <p class="hint">Override method using header; TRACE echoes headers.</p>
+          <div style="margin-top:8px;"><button id="sc-methods-run">POST /methods + X-HTTP-Method-Override: TRACE</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Chained and Nested Payloads</h3>
+          <p class="hint">Decode nested encodings in sequence.</p>
+          <div class="row"><input id="sc-chained-value" value="dGVzdA%3D%3D"/><input id="sc-chained-steps" value="url,b64"/></div>
+          <div style="margin-top:8px;"><button id="sc-chained-run">GET /chain</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Mismatch in Logging vs Processing</h3>
+          <p class="hint">Server logs sanitized values, but processes raw (try null byte). Check server logs in console.</p>
+          <div style="margin-top:8px;"><button id="sc-mlp-run">Run /nullbyte (see server logs)</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Overly Trusting Reverse Proxies</h3>
+          <p class="hint">Treats X-Forwarded-For client IP as trusted; 127.0.0.1 becomes admin.</p>
+          <input id="sc-xff" value="127.0.0.1, 1.2.3.4"/>
+          <div style="margin-top:8px;"><button id="sc-proxy-run">GET /proxy</button></div>
+        </div>
+        <hr/>
+
+        <div class="scenario">
+          <h3>Desync Attacks</h3>
+          <p class="hint">Hijacks the connection and echoes partial request. Behavior varies behind proxies.</p>
+          <div style="margin-top:8px;"><button id="sc-desync-run">GET /desync</button></div>
+        </div>
+
+        <hr/>
+        <div class="scenario">
+          <h3>Cookies Ambiguities</h3>
+          <p class="hint">Browsers won’t let JS set duplicate Cookie headers. Use this to set a cookie twice (last wins), then query backend. For true duplicates, try curl/proxy tools.</p>
+          <div class="row"><input id="sc-cookie-name" value="SESSION"/><select id="sc-cookie-pick"><option>last</option><option>first</option></select></div>
+          <div class="row"><input id="sc-cookie-val1" placeholder="value 1" value="a"/><input id="sc-cookie-val2" placeholder="value 2" value="b"/></div>
+          <div style="margin-top:8px; display:flex; gap:8px;"><button id="sc-cookie-set">Set document.cookie twice</button><button id="sc-cookie-run">GET /cookies?name=...&pick=...</button></div>
+          <div class="hint">Tip: After setting, you can also try different casings for name on server (`name=SESSION` vs `session`).</div>
+        </div>
+
+        <hr/>
+        <div class="scenario">
+          <h3>Unsafe Upload</h3>
+          <p class="hint">Saves uploaded file using provided filename. Try Windows separators and nested paths.</p>
+          <div class="row"><input id="sc-upload-fname" placeholder="override filename (e.g., nested/evil.txt)"/><input type="file" id="sc-upload-file"/></div>
+          <div style="margin-top:8px;"><button id="sc-upload-run">POST /upload</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <label>Response (text)</label>
+      <pre class="result" id="result-text"></pre>
+      <label>Rendered (unsafe HTML)</label>
+      <div class="result" id="result-html"></div>
+    </section>
+  </main>
+
+  <script>
+  const $ = sel => document.querySelector(sel);
+  function renderUnsafeHTML(text) {
+    const container = $('#result-html');
+    container.innerHTML = text;
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach(old => {
+      const s = document.createElement('script');
+      for (const attr of old.attributes) s.setAttribute(attr.name, attr.value);
+      s.text = old.textContent;
+      old.parentNode.replaceChild(s, old);
+    });
+  }
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const name = tab.dataset.tab;
+    ['xss','encode','path','headers','proxy','scenarios'].forEach(n => {
+      $('#tab-' + n).style.display = n === name ? '' : 'none';
+    });
+  }));
+
+  async function request(path, options={}) {
+    const res = await fetch(path, options);
+    const ct = res.headers.get('content-type') || '';
+    const text = await res.text();
+    $('#result-text').textContent = text;
+    renderUnsafeHTML(text);
+    return {status: res.status, ct, text};
+  }
+
+  $('#xss-run').addEventListener('click', async () => {
+    const val = $('#xss-input').value;
+    const ep = $('#xss-endpoint').value;
+    const dec = ($('#xss-decodes').value || '').trim();
+    const url = dec ? `${ep}${ep.includes('?') ? '&' : '?'}enc=${encodeURIComponent(dec)}&q=${encodeURIComponent(val)}` : `${ep}${ep.includes('?') ? '&' : '?'}q=${encodeURIComponent(val)}`;
+    request(url);
+  });
+
+  $('#enc-run').addEventListener('click', () => {
+    const mode = $('#enc-mode').value;
+    const repeat = $('#enc-repeat').value;
+    const value = $('#enc-value').value;
+    request(`/decode?mode=${encodeURIComponent(mode)}&repeat=${encodeURIComponent(repeat)}&value=${encodeURIComponent(value)}`);
+  });
+
+  $('#path-run').addEventListener('click', () => {
+    const f = $('#path-file').value; request(`/path?file=${encodeURIComponent(f)}`);
+  });
+  $('#pathwin-run').addEventListener('click', () => {
+    const f = $('#path-file').value; request(`/pathwin?file=${encodeURIComponent(f)}`);
+  });
+
+  $('#hdr-run').addEventListener('click', async () => {
+    const kv = $('#hdr-kv').value.split(':');
+    const kv2 = $('#hdr-kv2').value.split(':');
+    const headers = new Headers();
+    if (kv.length >= 2) headers.append(kv[0].trim(), kv.slice(1).join(':').trim());
+    if (kv2.length >= 2) headers.append(kv2[0].trim(), kv2.slice(1).join(':').trim());
+    const res = await fetch('/headers?pick=last&key=X-Test', { headers });
+    const text = await res.text();
+    $('#result-text').textContent = text;
+    renderUnsafeHTML(text);
+  });
+
+  $('#proxy-run').addEventListener('click', () => {
+    const xff = $('#xff').value;
+    fetch('/proxy', { headers: { 'X-Forwarded-For': xff } })
+      .then(r => r.text()).then(text => { $('#result-text').textContent = text; $('#result-html').innerHTML = text; });
+  });
+
+  // Scenarios wiring
+  $('#sc-case-run').addEventListener('click', () => {
+    const u = $('#sc-case-upper').value, l = $('#sc-case-lower').value, m = $('#sc-case-mixed').value;
+    request(`/case?Param=${encodeURIComponent(u)}&param=${encodeURIComponent(l)}&pArAm=${encodeURIComponent(m)}`);
+  });
+
+  $('#sc-enc-run').addEventListener('click', () => {
+    const v = $('#sc-enc-value').value, chain = $('#sc-enc-chain').value, ep = $('#sc-enc-ep').value;
+    const url = `${ep}${ep.includes('?') ? '&' : '?'}enc=${encodeURIComponent(chain)}&q=${encodeURIComponent(v)}`;
+    request(url);
+  });
+
+  $('#sc-unicode-run').addEventListener('click', () => {
+    const v = $('#sc-unicode-value').value; request(`/decode?mode=unicode&repeat=1&value=${encodeURIComponent(v)}`);
+  });
+  $('#sc-hex-run').addEventListener('click', () => {
+    const v = $('#sc-hex-value').value; request(`/decode?mode=hex&repeat=1&value=${encodeURIComponent(v)}`);
+  });
+
+  $('#sc-dec-run').addEventListener('click', () => {
+    const mode = $('#sc-dec-mode').value, rep = $('#sc-dec-repeat').value, val = $('#sc-dec-value').value;
+    request(`/decode?mode=${encodeURIComponent(mode)}&repeat=${encodeURIComponent(rep)}&value=${encodeURIComponent(val)}`);
+  });
+
+  $('#sc-chain-run').addEventListener('click', () => {
+    const v = $('#sc-chain-value').value, steps = $('#sc-chain-steps').value; request(`/chain?value=${encodeURIComponent(v)}&steps=${encodeURIComponent(steps)}`);
+  });
+
+  $('#sc-norm-run').addEventListener('click', () => {
+    const u = $('#sc-norm-u').value; request(`/normalize?u=${encodeURIComponent(u)}`);
+  });
+
+  $('#sc-path-run').addEventListener('click', () => {
+    const f = $('#sc-path-file').value; request(`/path?file=${encodeURIComponent(f)}`);
+  });
+  $('#sc-pathwin-run').addEventListener('click', () => {
+    const f = $('#sc-pathwin-file').value; request(`/pathwin?file=${encodeURIComponent(f)}`);
+  });
+
+  $('#sc-json-run').addEventListener('click', async () => {
+    const body = $('#sc-json-body').value;
+    const res = await fetch('/json?a=9', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body });
+    const text = await res.text(); $('#result-text').textContent = text; renderUnsafeHTML(text);
+  });
+
+  $('#sc-xml-run').addEventListener('click', async () => {
+    const body = $('#sc-xml-body').value;
+    const res = await fetch('/xml', { method: 'POST', body });
+    const text = await res.text(); $('#result-text').textContent = text; renderUnsafeHTML(text);
+  });
+
+  $('#sc-mime-run').addEventListener('click', async () => {
+    const body = $('#sc-mime-body').value;
+    const res = await fetch('/mime', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body });
+    const text = await res.text(); $('#result-text').textContent = text; renderUnsafeHTML(text);
+  });
+
+  $('#sc-filter-run').addEventListener('click', () => {
+    const q = $('#sc-filter-q').value; request(`/filter?q=${encodeURIComponent(q)}`);
+  });
+
+  $('#sc-headers-run').addEventListener('click', async () => {
+    const kv = $('#sc-h1').value.split(':'), kv2 = $('#sc-h2').value.split(':');
+    const headers = new Headers();
+    if (kv.length >= 2) headers.append(kv[0].trim(), kv.slice(1).join(':').trim());
+    if (kv2.length >= 2) headers.append(kv2[0].trim(), kv2.slice(1).join(':').trim());
+    const res = await fetch('/headers?pick=last&key=X-Test', { headers });
+    const text = await res.text(); $('#result-text').textContent = text; renderUnsafeHTML(text);
+  });
+
+  $('#sc-null-run').addEventListener('click', () => {
+    const name = $('#sc-null-name').value; request(`/nullbyte?name=${name}`);
+  });
+
+  $('#sc-hpp-run').addEventListener('click', () => {
+    const vals = $('#sc-hpp-values').value.split(',').map(v => v.trim()).filter(Boolean);
+    const qs = vals.map(v => `a=${encodeURIComponent(v)}`).join('&'); request(`/hpp?${qs}`);
+  });
+
+  $('#sc-semi-run').addEventListener('click', () => {
+    const raw = $('#sc-semi-raw').value; request(`/semicolon?raw=${encodeURIComponent(raw)}`);
+  });
+
+  $('#sc-methods-run').addEventListener('click', async () => {
+    const res = await fetch('/methods', { method: 'POST', headers: { 'X-HTTP-Method-Override': 'TRACE', 'X-Demo': 'value' } });
+    const text = await res.text(); $('#result-text').textContent = text; $('#result-html').innerHTML = text;
+  });
+
+  $('#sc-chained-run').addEventListener('click', () => {
+    const v = $('#sc-chained-value').value, s = $('#sc-chained-steps').value; request(`/chain?value=${encodeURIComponent(v)}&steps=${encodeURIComponent(s)}`);
+  });
+
+  $('#sc-mlp-run').addEventListener('click', () => {
+    request(`/nullbyte?name=admin%00root`);
+  });
+
+  $('#sc-proxy-run').addEventListener('click', () => {
+    const xff = $('#sc-xff').value; fetch('/proxy', { headers: { 'X-Forwarded-For': xff } })
+      .then(r => r.text()).then(text => { $('#result-text').textContent = text; renderUnsafeHTML(text); });
+  });
+
+  $('#sc-desync-run').addEventListener('click', () => { request('/desync'); });
+
+  $('#sc-cookie-set').addEventListener('click', () => {
+    const name = $('#sc-cookie-name').value || 'SESSION';
+    const v1 = $('#sc-cookie-val1').value || 'a';
+    const v2 = $('#sc-cookie-val2').value || 'b';
+    document.cookie = `${name}=${encodeURIComponent(v1)}; path=/`;
+    document.cookie = `${name}=${encodeURIComponent(v2)}; path=/`;
+    alert('Cookies set. Browser may only keep last one.');
+  });
+  $('#sc-cookie-run').addEventListener('click', () => {
+    const name = $('#sc-cookie-name').value || 'SESSION';
+    const pick = $('#sc-cookie-pick').value || 'last';
+    request(`/cookies?name=${encodeURIComponent(name)}&pick=${encodeURIComponent(pick)}`);
+  });
+
+  $('#sc-upload-run').addEventListener('click', async () => {
+    const fileInput = $('#sc-upload-file');
+    const fname = $('#sc-upload-fname').value;
+    const fd = new FormData();
+    const file = fileInput.files && fileInput.files[0];
+    if (file) {
+      // Wrap in a new File to override filename if provided
+      const f = fname ? new File([file], fname, { type: file.type }) : file;
+      fd.append('file', f, f.name);
+    }
+    const res = await fetch('/upload', { method: 'POST', body: fd });
+    const text = await res.text(); $('#result-text').textContent = text; renderUnsafeHTML(text);
+  });
+  </script>
+</body>
+</html>
+
+
