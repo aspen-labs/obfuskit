@@ -24,7 +24,7 @@ jobs:
             suffix: arm64
             arch: arm64
             runner: 'ubuntu-24.04-arm'
-    runs-on: ${{ fromJSON(matrix.runner) }}
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
@@ -153,7 +153,7 @@ jobs:
 
   build-binaries:
     name: Build Go binaries (${{ matrix.goos }}/${{ matrix.goarch }})
-    runs-on: ${{ fromJSON(matrix.runner) }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
