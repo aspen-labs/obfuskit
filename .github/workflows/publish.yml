@@ -63,7 +63,7 @@ jobs:
         id: coraza-waf-meta
         uses: docker/metadata-action@v5
         with:
-            images: ${{ env.REGISTRY }}/coraza-waf-testing
+            images: ${{ env.REGISTRY }}/obfuskit-coraza-waf
             tags: |
                 type=ref,event=branch
                 type=ref,event=pr
