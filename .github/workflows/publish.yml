@@ -118,12 +118,18 @@ jobs:
       - name: Create manifest (main image)
         run: |
           set -euo pipefail
+          retry() { n=0; until [ "$n" -ge 10 ]; do "$@" && break; n=$((n+1)); sleep 6; done; }
+          check_exists() { docker buildx imagetools inspect "$1" >/dev/null 2>&1; }
           while IFS= read -r tag; do
             [ -z "$tag" ] && continue
+            echo "Preparing manifest for: $tag"
+            # Wait until both arch images are available (eventual consistency on GHCR)
+            retry check_exists "$tag-amd64"
+            retry check_exists "$tag-arm64"
             docker buildx imagetools create \
               -t "$tag" \
-              "$tag-arm64" \
-              "$tag-amd64"
+              "$tag-amd64" \
+              "$tag-arm64"
           done <<< "${{ steps.meta.outputs.tags }}"
       - name: Metadata (coraza-waf)
         id: coraza_meta
@@ -143,12 +149,17 @@ jobs:
       - name: Create manifest (coraza-waf)
         run: |
           set -euo pipefail
+          retry() { n=0; until [ "$n" -ge 10 ]; do "$@" && break; n=$((n+1)); sleep 6; done; }
+          check_exists() { docker buildx imagetools inspect "$1" >/dev/null 2>&1; }
           while IFS= read -r tag; do
             [ -z "$tag" ] && continue
+            echo "Preparing coraza-waf manifest for: $tag"
+            retry check_exists "$tag-amd64"
+            retry check_exists "$tag-arm64"
             docker buildx imagetools create \
               -t "$tag" \
-              "$tag-arm64" \
-              "$tag-amd64"
+              "$tag-amd64" \
+              "$tag-arm64"
           done <<< "${{ steps.coraza_meta.outputs.tags }}"
 
   build-binaries:

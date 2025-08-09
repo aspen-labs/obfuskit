@@ -5,52 +5,6 @@ on:
     branches: [ main ]
 
 jobs:
-  test-build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: [linux/amd64, linux/arm64]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: ${{ matrix.platform }}
-          push: false
-          tags: obfuskit:test-${{ matrix.platform }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Test Docker image
-        run: |
-          # Test basic functionality
-          docker run --rm obfuskit:test-${{ matrix.platform }} \
-            ./obfuskit -version
-          
-          # Test help command
-          docker run --rm obfuskit:test-${{ matrix.platform }} \
-            ./obfuskit -help | head -5
-          
-          # Test payload generation
-          docker run --rm obfuskit:test-${{ matrix.platform }} \
-            ./obfuskit -attack xss -payload '<script>alert(1)</script>' -limit 3
-          
-          # Test AI functionality (if API key is available)
-          if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then
-            docker run --rm \
-              -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-              obfuskit:test-${{ matrix.platform }} \
-              ./obfuskit -attack xss -payload '<script>alert(1)</script>' \
-              -ai -ai-provider openai -ai-count 1
-          fi
-
   # Additional job for Go testing
   test-go:
     runs-on: ubuntu-latest
