@@ -21,7 +21,7 @@ jobs:
             runner: '"ubuntu-latest"'
           - platform: linux/arm64
             suffix: arm64
-            runner: '["self-hosted","Linux","ARM64"]'
+            runner: '"ubuntu-latest"'
     runs-on: ${{ fromJSON(matrix.runner) }}
     permissions:
       contents: read
@@ -63,11 +63,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}-${{ matrix.suffix }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+     # Since publishing another image, we need to use the full path
       - name: Metadata (coraza-waf)
         id: coraza_meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/obfuskit-coraza-waf
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/obfuskit-coraza-waf
           tags: |
             type=ref,event=branch
             type=ref,event=pr
