@@ -44,7 +44,13 @@
 	}
 }
 
-:8000 {
+:8881 {
+	import waf
+	reverse_proxy {$ECHOSERVER_HOST:vulnapp}:8881
+}
+
+:8882 {
 	import waf
 	reverse_proxy {$ECHOSERVER_HOST:echoserver}:8080
 }
+

@@ -18,7 +18,7 @@ RUN chmod +x /app/bin/caddy
 COPY Caddyfile /app/Caddyfile
 COPY 403.html /app/403.html
 
-EXPOSE 8000
+EXPOSE 8000 8881 8882
 
 CMD /app/bin/caddy run --config /app/Caddyfile --adapter caddyfile 2>&1 | tee /app/logs/caddy.log
 

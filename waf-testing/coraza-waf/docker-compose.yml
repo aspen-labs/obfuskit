@@ -4,15 +4,23 @@ version: '3.8'
 services:
     
   echoserver:
-    image: piyushroshan/echo-server:arm64
+    image: piyushroshan/echo-server:latest
     ports:
       - "7080:8080"
   
+  vulnapp:
+    image: piyushroshan/obfuskit-vuln-app:latest
+    ports:
+      - "8889:8881"
+  
   corazacaddy:
-    image: piyushroshan/coraza-caddy:arm64
+    image: piyushroshan/coraza-caddy:latest
     depends_on:
       - echoserver
+      - appserver
     volumes:
       - ./logs:/app/logs
     ports:
       - "8888:8000"
+      - "8881:8881"
+      - "8892:8882"

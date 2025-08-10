@@ -5,6 +5,11 @@ services:
     image: piyushroshan/echo-server:arm64
     ports:
       - "7080:8080"
+
+  vulnapp:
+    image: piyushroshan/obfuskit-vuln-app:arm64
+    ports:
+      - "8889:8881"
   
   corazacaddy:
     image: piyushroshan/coraza-caddy:arm64
@@ -14,6 +19,8 @@ services:
       - ./logs:/app/logs
     ports:
       - "8888:8000"
+      - "8881:8881"
+      - "8882:8882"
 
   obfuskit:
     image: piyushroshan/obfuskit:arm64
