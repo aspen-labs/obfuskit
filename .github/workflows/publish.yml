@@ -170,11 +170,11 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
+            type=sha
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}
       - name: Create manifest (main image)
         run: |
           set -euo pipefail
@@ -201,11 +201,11 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
+            type=sha
             type=semver,pattern={{version}}-
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}
       - name: Create manifest (coraza-waf)
         run: |
           set -euo pipefail
@@ -232,11 +232,11 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
+            type=sha
             type=semver,pattern={{version}}-
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}
       - name: Create manifest (vuln-app)
         run: |
           set -euo pipefail
@@ -352,7 +352,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Metadata (vuln-app)
+      - name: Metadata 
         id: meta
         uses: docker/metadata-action@v5
         with:
