@@ -313,8 +313,9 @@ jobs:
       - name: Download burp plugin artifact
         uses: actions/download-artifact@v4
         with:
-          name: burpplugin-jar
+          pattern: burpplugin-jar-*
           path: dist
+          merge-multiple: true
       - name: Publish Release assets
         uses: softprops/action-gh-release@v2
         with:
