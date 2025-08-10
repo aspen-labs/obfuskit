@@ -320,8 +320,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/obfuskit-*.tar.gz
-            dist/obfuskit-*.tar.gz.sha256
+            dist/*
+            
 
   # Additional job for testing the built images
   test-images:
