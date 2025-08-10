@@ -83,11 +83,11 @@ jobs:
           tags: |
             type=ref,event=branch,suffix=-${{matrix.suffix}}
             type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=sha,suffix=-${{matrix.suffix}}
             type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
       - name: Build ${{ matrix.platform }} (main image)
         uses: docker/build-push-action@v5
         with:
@@ -112,11 +112,11 @@ jobs:
           tags: |
             type=ref,event=branch,suffix=-${{matrix.suffix}}
             type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=sha,suffix=-${{matrix.suffix}}
             type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
       - name: Build ${{ matrix.platform }} (coraza-waf)
         uses: docker/build-push-action@v5
         with:
@@ -136,11 +136,11 @@ jobs:
           tags: |
             type=ref,event=branch,suffix=-${{matrix.suffix}}
             type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=sha,suffix=-${{matrix.suffix}}
             type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
       - name: Build ${{ matrix.platform }} (vuln-app)
         uses: docker/build-push-action@v5
         with:
@@ -174,7 +174,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}}
       - name: Create manifest (main image)
         run: |
           set -euo pipefail
@@ -205,7 +205,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}}
       - name: Create manifest (coraza-waf)
         run: |
           set -euo pipefail
@@ -236,7 +236,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}}
       - name: Create manifest (vuln-app)
         run: |
           set -euo pipefail
@@ -359,11 +359,11 @@ jobs:
           tags: |
             type=ref,event=branch,suffix=-${{matrix.suffix}}
             type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=sha,suffix=-${{matrix.suffix}}
             type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
 
       - name: Extract tag from metadata
         id: extract_tag
