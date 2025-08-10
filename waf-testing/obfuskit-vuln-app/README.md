@@ -38,7 +38,41 @@ Endpoints (examples):
 - case: `GET /case?Param=AAA&param=bbb&pArAm=ccc`
 - xml: `POST /xml` with a `<!ENTITY name SYSTEM "file:///etc/hosts">` and `&name;` in body
 
-Client UI
-- Open `http://localhost:8881/ui/` for an intentionally unsafe client that renders responses as HTML. Useful to exercise XSS endpoints like `/xss` and `/echo?mode=raw`.
+## Interactive UI
+
+The application now serves an interactive UI as the default page. Simply visit:
+
+- **Main UI**: `http://localhost:8881/` (redirects to `/ui/`)
+- **Direct UI**: `http://localhost:8881/ui/`
+
+The UI provides individual tabs for each vulnerability type with:
+- Detailed exploitation hints and examples
+- Pre-filled payloads for testing
+- Real-time response rendering (including unsafe HTML)
+- Comprehensive coverage of all vulnerability endpoints
+
+Each tab includes:
+- **XSS**: Entity encoding bypasses, multiple endpoints
+- **Case Sensitivity**: Parameter key confusion
+- **Encoding Mismatch**: Frontend vs backend decoding differences
+- **Unicode/Hex**: Character encoding bypasses
+- **Mixed Encodings**: Chained decode operations
+- **URL Normalization**: Path traversal via encoding
+- **Path Traversal**: UNIX and Windows path handling
+- **JSON/XML Parsing**: Content-Type confusion and XXE
+- **MIME Sniffing**: Content type override attacks
+- **Regex Bypass**: Filter evasion techniques
+- **Header Parsing**: Duplicate header handling
+- **Cookie Ambiguity**: Multiple cookie value handling
+- **Null Byte Injection**: String termination attacks
+- **Parameter Pollution**: Multiple parameter instances
+- **Semicolon Parsing**: Query string separator confusion
+- **Unsafe Upload**: Path traversal in file uploads
+- **HTTP Methods**: Method override attacks
+- **Chained Payloads**: Nested encoding sequences
+- **Proxy Trust**: X-Forwarded-For exploitation
+- **Desync Attack**: Connection hijacking
+
+**Security note**: This app is intentionally unsafe. Do not expose it to the internet.
 
 Security note: This app is intentionally unsafe. Do not expose it to the internet.

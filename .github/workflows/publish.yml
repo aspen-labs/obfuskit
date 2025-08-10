@@ -312,12 +312,21 @@ jobs:
 
   # Additional job for testing the built images
   test-images:
+    name: Test ${{ matrix.platform }} image
     needs: manifest
-    runs-on: ubuntu-latest
-
     strategy:
+      fail-fast: false
       matrix:
-        platform: [linux/amd64, linux/arm64]
+        include:    
+          - platform: linux/amd64
+            suffix: amd64
+            arch: amd64
+            runner: 'ubuntu-24.04'
+          - platform: linux/arm64
+            suffix: arm64
+            arch: arm64
+            runner: 'ubuntu-24.04-arm'
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Set up Docker Buildx
@@ -330,24 +339,39 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Metadata (vuln-app)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-${{matrix.suffix}}
+            type=ref,event=pr,suffix=-${{matrix.suffix}}
+            type=semver,pattern={{version}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}}.{{minor}},suffix=-${{matrix.suffix}}
+            type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
+            type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-,suffix=-${{matrix.suffix}}
+
       - name: Test Docker image
         run: |
-          # Pull the latest image for the current platform
-          docker pull --platform ${{ matrix.platform }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          # Use one of the tags from meta step to pull the image 
+          TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          docker pull --platform ${{ matrix.platform }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}
           
           # Test basic functionality
           docker run --rm --platform ${{ matrix.platform }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG} \
             ./obfuskit -version
           
           # Test help command
           docker run --rm --platform ${{ matrix.platform }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}  \
             ./obfuskit -help | head -5
           
           # Test payload generation
           docker run --rm --platform ${{ matrix.platform }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}  \
             ./obfuskit -attack xss -payload '<script>alert(1)</script>' -limit 3
 
   # Job to publish release notes

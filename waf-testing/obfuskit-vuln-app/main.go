@@ -61,6 +61,10 @@ func main() {
 	mux.HandleFunc("/ui", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/ui/", http.StatusFound)
 	})
+	// Serve index.html directly at /ui/ for better UX
+	mux.HandleFunc("/ui/index.html", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/ui/", http.StatusFound)
+	})
 
 	srv := &http.Server{
 		Addr:              ":8881",
@@ -98,9 +102,8 @@ func withLogging(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "obfuskitvulnapp: intentionally vulnerable normalization playground\n")
-	fmt.Fprintf(w, "See README for endpoints.\n")
+	// Redirect root to the UI
+	http.Redirect(w, r, "/ui/", http.StatusFound)
 }
 
 // /echo?q=...
