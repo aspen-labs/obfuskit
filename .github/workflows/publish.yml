@@ -89,7 +89,7 @@ jobs:
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
       - name: Build ${{ matrix.platform }} (main image)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{ matrix.platform }}
@@ -118,7 +118,7 @@ jobs:
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
       - name: Build ${{ matrix.platform }} (coraza-waf)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./waf-testing/coraza-waf
           platforms: ${{ matrix.platform }}
@@ -142,7 +142,7 @@ jobs:
             type=semver,pattern={{major}},suffix=-${{matrix.suffix}}
             type=raw,value=latest,suffix=-${{matrix.suffix}},enable={{is_default_branch}}
       - name: Build ${{ matrix.platform }} (vuln-app)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./waf-testing/obfuskit-vuln-app
           platforms: ${{ matrix.platform }}
